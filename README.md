@@ -27,7 +27,9 @@ Run Elixir interactively:
 
 Write an Elixir script (`hello.exs`, the `s` stands for "script"):
 
-    IO.puts("Hello, World!")
+```elixir
+IO.puts("Hello, World!")
+```
 
 Run the Elixir script:
 
@@ -83,3 +85,55 @@ Variables cannot be _changed_, but _rebound_:
     3
     > a = 4
     4
+
+# Modules
+
+Functions are grouped together in Modules (`geometry.ex`):
+
+```elixir
+defmodule Geometry do
+  def rectangle_area(a, b) do
+    a * b
+  end
+  def rectangle_perimeter(a, b) do
+    2 * a + 2 * b
+  end
+end
+```
+
+Modules can be used interactively using `iex`:
+
+    $ iex
+    > Geometry.rectangle_area(3, 2)
+    6
+    > Geometry.rectangle_perimeter(3, 2)
+    10
+
+Module names are written in CamelCase; alphanumeric characters and the dot are
+allowed in them.
+
+Multiple modules can be defined in the same file. Modules can also be nested
+hierarchically (`calculator.ex`):
+
+```elixir
+defmodule Calculator do
+  defmodule Basic do
+    def add(a, b) do
+      a + b
+    end
+  end
+  defmodule Advanced do
+    def pow(a, b) do
+      Integer.pow(a, b)
+    end
+  end
+end
+```
+
+The module names are qualified with a dot:
+
+    $ iex calculator.ex
+    > Calculator.Basic.add(5, 3)
+    8
+    > Calculator.Advanced.pow(5, 2)
+    25
