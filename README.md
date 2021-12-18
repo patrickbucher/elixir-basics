@@ -44,6 +44,7 @@ Run the Elixir script:
 - [Erlang Documentation](https://www.erlang.org/doc/)
 - [Elixir/Erlang Crash Course](https://elixir-lang.org/crash-course.html)
 - [IEx](https://hexdocs.pm/iex/IEx.html)
+- [Mix (Build Tool)](https://hexdocs.pm/mix/Mix.html)
 
 For interactive help, launch `iex` and type `h`:
 
@@ -137,3 +138,25 @@ The module names are qualified with a dot:
     8
     > Calculator.Advanced.pow(5, 2)
     25
+
+# Functions
+
+Functions must always be part of a module. The same naming rules as for
+variables apply, whereas `?` indicates a predicate function (that returns `true`
+or `false`), and `!` that a function may cause a runtime error.
+
+Small functions can be written on a single line:
+
+```elixir
+defmodule Geometry do
+  def rectangle_area(a, b), do: a * b
+  def rectangle_perimeter(a, b), do: 2 * a + 2 * b
+end
+```
+
+Notice the `,` after the parameter list, the `:` after `do`, and the missing
+`end` indicator after the function.
+
+## Function Composition
+
+TODO: pipeline operator `|>`
