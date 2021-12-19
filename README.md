@@ -178,6 +178,59 @@ alias, so that it can be used as `Geom`:
 The [Kernel](https://hexdocs.pm/elixir/Kernel.html) module is always imported
 automatically, so that its functions can be used without further qualification.
 
+## Module Attributes
+
+Module attributes are used to define constants and to provide documentation
+(`free_fall.ex`):
+
+```elixir
+TODO
+```
+
+`@gravity` defines a compile-time constant.
+
+`@moduledoc` and `@doc` provides documentation for the surrounding module and
+for the following function, respectively. `@spec` provides [type
+specificatons](https://hexdocs.pm/elixir/typespecs.html) that can be analyzed
+using the [`dialyzer`](https://www.erlang.org/doc/man/dialyzer.html) The module
+needs to be compiled in order to have this documentation accessible during
+runtime:
+
+    $ elixirc free_fall.ex
+    $ file Elixir.FreeFall.beam
+    Elixir.FreeFall.beam: Erlang BEAM file
+    $ iex
+    > Code.fetch_docs(FreeFall)
+    {:docs_v1, 2, :elixir, "text/markdown",
+     %{"en" => "Offers functions concerning the free fall of objects"}, %{},
+     [
+       {{:function, :fall_time, 1}, 10, ["fall_time(height)"],
+        %{"en" => "Computes the time it takes for the object to reach the ground"},
+        %{}},
+       {{:function, :impact_velocity, 1}, 5, ["impact_velocity(height)"],
+        %{"en" => "Computes the velocity on impact given the height"}, %{}}
+     ]}
+
+The help function (`h`) is more helpful for interactive use:
+
+     > h FreeFall
+
+                                    FreeFall
+
+    Offers functions concerning the free fall of objects
+
+    > h FreeFall.impact_velocity
+
+                          def impact_velocity(height)
+
+      @spec impact_velocity(number()) :: number()
+
+    Computes the velocity on impact given the height
+
+
+The [Module](https://hexdocs.pm/elixir/Module.html) documentation contains more
+information on built-in module attributes.
+
 # Functions
 
 Functions must always be part of a module. The same naming rules as for
@@ -249,11 +302,15 @@ Longer pipelines are usually spread out over multiple lines:
 def grade(points, max) do
   points
   |> ratio(max)
-  |> multiply(5)
-  |> add(1)
+  |> multiply(5) # scaling from 0..1 to 0..5
+  |> add(1)      # shifting from 0..5 to 1..6
   |> round(0.1)
 end
 ```
+
+Comments start with the `#` character and go to the end of the line. There's no
+special syntax for multi-line comments, i.e. every line of a multi-line comment
+has to start with a `#`.
 
 ## Arities and Default Values
 
