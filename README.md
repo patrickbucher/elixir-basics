@@ -139,6 +139,45 @@ The module names are qualified with a dot:
     > Calculator.Advanced.pow(5, 2)
     25
 
+## Imports and Aliases
+
+Other modules can be imported into the current module, so that function calls
+don't have to be qualified using their module name. It's also possible to use an
+alias name for an imported module (`hello_calculator.ex`):
+
+```elixir
+defmodule Geometry do
+  def rectangle_area(a, b) do
+    a * b
+  end
+  def rectangle_perimeter(a, b) do
+    2 * a + 2 * b
+  end
+end
+
+defmodule HelloCalculator do
+  import IO
+  alias Geometry, as: Geom
+  def rect_info(a, b) do
+    area = Geom.rectangle_area(a, b)
+    perimeter = Geom.rectangle_perimeter(a, b)
+    puts("Rectangle(#{a}, #{b}): Area #{area}, Perimeter: #{perimeter}")
+  end
+end
+```
+
+The module `HelloCalculator` imports `IO`, so `puts` can be used without further
+qualification (instead of `IO.puts`). `Geometry` is also imported, but using an
+alias, so that it can be used as `Geom`:
+
+    $ iex hello_calculator.ex
+    > HelloCalculator.rect_info(3, 5)
+    Rectangle(3, 5): Area 15, Perimeter: 16
+    :ok
+
+The [Kernel](https://hexdocs.pm/elixir/Kernel.html) module is always imported
+automatically, so that its functions can be used without further qualification.
+
 # Functions
 
 Functions must always be part of a module. The same naming rules as for
@@ -247,42 +286,3 @@ defmodule Increment do
   end
 end
 ```
-
-## Imports and Aliases
-
-Other modules can be imported into the current module, so that function calls
-don't have to be qualified using their module name. It's also possible to use an
-alias name for an imported module (`hello_calculator.ex`):
-
-```elixir
-defmodule Geometry do
-  def rectangle_area(a, b) do
-    a * b
-  end
-  def rectangle_perimeter(a, b) do
-    2 * a + 2 * b
-  end
-end
-
-defmodule HelloCalculator do
-  import IO
-  alias Geometry, as: Geom
-  def rect_info(a, b) do
-    area = Geom.rectangle_area(a, b)
-    perimeter = Geom.rectangle_perimeter(a, b)
-    puts("Rectangle(#{a}, #{b}): Area #{area}, Perimeter: #{perimeter}")
-  end
-end
-```
-
-The module `HelloCalculator` imports `IO`, so `puts` can be used without further
-qualification (instead of `IO.puts`). `Geometry` is also imported, but using an
-alias, so that it can be used as `Geom`:
-
-    $ iex hello_calculator.ex
-    > HelloCalculator.rect_info(3, 5)
-    Rectangle(3, 5): Area 15, Perimeter: 16
-    :ok
-
-The [Kernel](https://hexdocs.pm/elixir/Kernel.html) module is always imported
-automatically, so that its functions can be used without further qualification.
