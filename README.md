@@ -512,3 +512,79 @@ O(1) complexity:
 
     > numbers_from_zero = [0 | numbers]
     [0, 1, 2, 3, 4]
+
+## Maps
+
+Maps are key/value stores commonly used as dynamically sized associative arrays
+or as records. A map is created using the `%{}` syntax:
+
+    > empty_map = %{}
+    %{}
+
+A map can be created with initial values defined as key/value pairs:
+
+    > squares = %{1 => 1, 2 => 4, 3 => 9}
+    %{1 => 1, 2 => 4, 3 => 9}
+
+Using the `Map/new/1` function, a map is created based on a list of key/value
+tuples:
+
+    > doubles = Map.new([{1, 2}, {2, 4}, {3, 6}])
+    %{1 => 2, 2 => 4, 3 => 6}
+
+A value can be retrieved by indicating the key in square brackets:
+
+    > squares[1]
+    1
+    > squares[2]
+    4
+
+If the key is not found in the map, `nil` is returned:
+
+    > squares[4]
+    nil
+
+The `Map.get/3` function accepts a fallback value for this case:
+
+    > Map.get(squares, 3, :not_found)
+    9
+    > Map.get(squares, 4, :not_found)
+    :not_found
+
+The `Map.fetch/2` function indicates whether or not the value was found:
+
+    > Map.fetch(squares, 3)
+    {:ok, 9}
+    > Map.fetch(squares, 4)
+    :error
+
+The `Map.fetch!/2` function (notice the `!`) raises an error if the key
+indicated is not contained in the given map.
+
+Other useful functions for Maps are `Map.put/3`, `Map.delete/2`, and
+`Map.update/4`, as well as others in the
+[Map](https://hexdocs.pm/elixir/Map.html) module.
+
+Since maps are enumerables, the functions of the
+[Enum](https://hexdocs.pm/elixir/Enum.html) module can be used on them, too.
+
+### Records
+
+Maps can be used as records:
+
+    > dilbert = %{:name => "Dilbert", :age => 42, :job => "Engineer"}
+    %{age: 42, job: "Engineer", name: "Dilbert"}
+    > dilbert[:name]
+    "Dilbert"
+
+If the keys are atoms, this shorter syntax can be used:
+
+    > ashok = %{name: "Ashok", age: 25, job: "Intern"}
+    %{age: 25, job: "Intern", name: "Ashok"}
+    > ashok.name
+    "Ashok"
+
+Existing fields can be updated using this special syntax:
+
+    > promoted_ashok = %{ashok | age: 26, job: "Engineer"}
+    %{age: 26, job: "Engineer", name: "Ashok"}
