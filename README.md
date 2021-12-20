@@ -358,3 +358,79 @@ defmodule Increment do
   end
 end
 ```
+
+# Data Types
+
+## Integers
+
+Integers don't have an upper limit:
+
+    > 123456789 * 987654321 * 123456789 * 987654321
+    14867566530049990397812181822702361
+
+The underscore character can be used as a visual delimiter:
+
+    > 100_000_000 * 0.753_214_978
+    75321497.8
+
+Integer division and remainder are done using the `Kernel` functions `div` and
+`rem`:
+
+    > div(25, 4)
+    6
+    > rem(25, 4)
+    1
+
+## Atoms
+
+Atoms are named constants that either start with a colon or an uppercase letter:
+
+    > :an_atom
+    :an_atom
+    > :"an atom with spaces"
+    :"an atom with spaces"
+    > AlsoAnAtom
+    AlsoAnAtom
+
+Atoms are prefixed with `Elixir` automatically:
+
+    > AnAtom == Elixir.AnAtom
+    true
+
+Boolean values are actually atoms:
+
+    > true == :true
+    true
+    > false == :false
+    true
+
+And so is `nil`:
+
+    > nil == :nil
+    true
+
+Both `nil` and `false` are treated as _falsy_, all the other values as _truthy_,
+i.e. they evaluate to `false` or `true`, respectively:
+
+    > nil || false || 4
+    4
+
+## Tuples
+
+Tuples group values together in a collection with a fixed size:
+
+    > dilbert = {"Dilbert", 42, 120_000}
+    {"Dilbert", 42, 120000}
+
+Elements can be accessed using the `Kernel` function `elem/2`:
+
+    > elem(dilbert, 0)
+    "Dilbert"
+    > elem(dilbert, 2)
+    120000
+
+The `put_elem/3` function doesn't modify the tuple, but returns a copy of it,
+with the given element replaced:
+
+    > older_dilbert = put_elem(dilbert, 1, 43)
+    {"Dilbert", 43, 120000}
