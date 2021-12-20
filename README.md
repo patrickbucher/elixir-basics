@@ -434,3 +434,81 @@ with the given element replaced:
 
     > older_dilbert = put_elem(dilbert, 1, 43)
     {"Dilbert", 43, 120000}
+
+## Lists
+
+Lists are variable-sized collections to store multiple values
+
+    > numbers = [3, 7, 8, 2]
+    [3, 7, 8, 2]
+
+They are implemented as linked lists, therefore many operations have a runtime
+complexity of O(n), as does the `length/1` function:
+
+    > length(numbers)
+    4
+
+The `in` operator can be used to check whether or not a value is contained in a
+list:
+
+    > 7 in numbers
+    true
+    > 9 in numbers
+    false
+
+Both the [List](https://hexdocs.pm/elixir/List.html) and the
+[Enum](https://hexdocs.pm/elixir/Enum.html) module offer functions for dealing
+with lists.
+
+A list element can be accessed by its index using the `Enum.at/2` function:
+
+    > Enum.at(numbers, 0)
+    3
+    > Enum.at(numbers, 3)
+    2
+
+Like tuples, lists are immutable. Modified copies of them can be created using
+functions such as `List.repalce_at/3` and `List.insert_at/3`:
+
+    > new_numbers = List.replace_at(numbers, 0, 1)
+    [1, 7, 8, 2]
+    > more_numbers = List.insert_at(numbers, 2, 4)
+    [3, 7, 4, 8, 2]
+
+Use the index `-1` to append an element at the end of a list:
+
+    > even_more_numbers = List.insert_at(more_numbers, -1, 5)
+    [3, 7, 4, 8, 2, 5]
+
+Two lists can be concatenated using the `++` operator:
+
+    > [1, 2, 3] ++ [4, 5, 6] 
+    [1, 2, 3, 4, 5, 6]
+
+### Cons Cells
+
+Lists are implemented as _cons cells_ (i.e. like in LISP) and support a special
+head/tail syntax:
+
+    [head | tail]
+
+The head goes to the left side of the `|`, the tail to its right side:
+
+    > numbers = [1 | [2, 3, 4]]
+    [1, 2, 3, 4]
+
+The `hd` (head) and `tl` (tail) function can be used to access the head (a
+single value) and the tail (usually a list) of a list:
+
+    > hd(numbers)
+    1
+    > tl(numbers)
+    [2, 3, 4]
+
+Lists with a tail that is not itself a list are called _improper lists_.
+
+The head/tail syntax can be used to push elements at the front of a list with
+O(1) complexity:
+
+    > numbers_from_zero = [0 | numbers]
+    [0, 1, 2, 3, 4]
