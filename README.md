@@ -588,3 +588,132 @@ Existing fields can be updated using this special syntax:
 
     > promoted_ashok = %{ashok | age: 26, job: "Engineer"}
     %{age: 26, job: "Engineer", name: "Ashok"}
+
+## Binaries
+
+Binaries are sequences of bytes enclosed in `<<` and `>>`:
+
+    > <<1, 16, 128>>
+    <<1, 16, 128>>
+
+Values bigger than 255 (2⁸-1) are truncated:
+
+    > <<255, 256, 257, 511, 512, 513>>
+    <<255, 0, 1, 255, 0, 1>>
+
+The amount of bits to be used for each value can be defined:
+
+    > <<15::4>>
+    <<15::size(4)>>
+    > <<15::4, 12::4>>
+    <<252>>
+
+For the output, the two binaries 15 (1111) and 12 (1100) are normalized
+(11111100), which results in the value 252.
+
+A sequence of binaries only consisting of items with the size of a single bit is
+called a bitstring:
+
+    > <<1::1, 0::1, 1::1, 1::1>>
+    <<11::size(4)>>
+
+The bit sequence 1011 is a decimal 11 in the normalized form.
+
+Multiple binaries can be combined using the `<>` operator:
+
+    > <<1, 2, 3>> <> <<4, 5, 6>>
+    <<1, 2, 3, 4, 5, 6>>
+
+## Strings
+
+Elixir has no dedicated string type, but stores them either as binaries or as
+lists of characters.
+
+### Binary Strings
+
+Strings can be defined using double quotes:
+
+    > name = "Dilbert"
+    "Dilbert"
+
+Expressions can be embedded into strings using `#{}` (string interpolation):
+
+    > name = "Dilbert"
+    > age = 42
+    > profession = "Engineer"
+    > description = "#{name} is a #{age} years old #{profession}."
+    "Dilbert is a 42 years old Engineer."
+
+Escape sequences such as `\t`, `\n`, `\r`, `\\`, and `\"` are supported, too.
+
+Strings can also be defined using the sigil `~s()`, which allows the use of
+unescaped double quotes within the string:
+
+    > IO.puts(~s("Trust me, I'm an engineer!", Dilbert said.))
+    "Trust me, I'm an engineer!", Dilbert said.
+
+The sigil `~S()` ignores interpolation and escaping:
+
+    > ~S(#{name} is a #{age} years old #{profession}.)
+    "\#{name} is a \#{age} years old \#{profession}."
+    > ~S(age:\t42 years)
+    "age:\\t42 years"
+
+The special heredoc syntax supports multi-line strings:
+
+    > """
+    > This is on a single line.
+    > """
+    "This is on a single line.\n"
+
+Since strings are binaries, they can be concatenated using the `<>` operator:
+
+    > profession = "Engineer"
+    > "Dilbert's profession: " <> profession
+    "Dilbert's profession: Engineer"
+
+The [String](https://hexdocs.pm/elixir/String.html) module contains functions
+for handling (UTF-8) strings.
+
+### Character Lists
+
+Strings can also be represented as lists of characters within single quotes:
+
+    > 'ABC'
+    'ABC'
+
+Which is syntactic sugar for creating a list of their ASCII codes:
+
+    > [65, 66, 67]
+    'ABC'
+
+If a list consists of numbers representing printable characters, it is displayed
+as characters.
+
+Character lists are incompatible to binary strings, but offer similar features
+(escaping, interpolation, sigils, heredocs):
+
+    > name = "Dilbert"
+    > age = 42
+    > IO.puts('Name:\t#{name}\nAge:\t#{age}')
+    Name:   Dilbert
+    Age:    42
+    > IO.puts(~c('My name is #{name}', he said.))
+    'My name is Dilbert', he said.
+    > IO.puts(~C('My name is #{name}', he said.))
+    'My name is #{name}', he said.
+
+A character list can be converted into a binary string using `List.to_string/1`:
+
+    > List.to_string('ABC')
+    "ABC"
+
+A binary string can be converted to a character list using
+`String.to_charlist/1`:
+
+    > String.to_charlist("ABC")
+    'ABC'
+
+In general, binary strings should be preferred to character lists. However, some
+Erlang libraries require the use of character lists, in which case the
+conversion functions above are helpful.
