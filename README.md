@@ -717,3 +717,53 @@ A binary string can be converted to a character list using
 In general, binary strings should be preferred to character lists. However, some
 Erlang libraries require the use of character lists, in which case the
 conversion functions above are helpful.
+
+## First-Class Functions
+
+Functions are first-class citizens; they can be assigned to a variable.
+
+Anonymous functions or lambdas can be created using the `fn` keyword:
+
+    > twice = fn x -> 2 * x end
+
+Calling a lambda requires using the dot operator:
+
+    > twice.(5)
+    10
+
+Functions can be passed to other functions, e.g. to process lists of items:
+
+    > Enum.map([1, 2, 3], twice)
+    [2, 4, 6]
+
+The function argument can also be a function literal:
+
+    > Enum.map([1, 2, 3], fn x -> 2 * x end)
+    [2, 4, 6]
+
+An existing function, like `IO.puts/1`, can be used as a lambda with the capture
+operator `&`:
+
+    > Enum.each([1, 2, 3], &IO.puts/1)
+    1
+    2
+    3
+
+Lambda expressions can be shortened by using the capture operator and by
+referring to the n-th parameter as `&[n]` in the function definition:
+
+    > Enum.map([1, 2, 3], &(2 * &1))
+    [2, 4, 6]
+
+### Closures
+
+A lambda function captures variables bound at the time of its definition:
+
+    > percentage = 75
+    > get_percentage = fn x -> (percentage / 100) * x end
+    > percentage = 99
+    > Enum.map([1, 2, 3], get_percentage)
+    [0.75, 1.5, 2.25]
+
+The percentage 75 is used and not 99, because the first value was bound at the
+time of the function definition.
