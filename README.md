@@ -925,3 +925,34 @@ Appending to a list is an O(n) operation, i.e. very efficient:
     [[[[], "Hello"], ", "], "World!"]
     > IO.puts(output)
     Hello, World!
+
+# Operators
+
+Operators are implemented as functions of the `Kernel` module:
+
+    > 3 + 5
+    8
+    > Kernel.+(3, 5)
+    8
+
+Instead of defining lambda functions:
+
+    > Enum.reduce([1, 2, 3], fn x, y -> x + y end)
+    6
+
+The operator functions of the `Kernel` module can be used:
+
+    > Enum.reduce([1, 2, 3], &Kernel.+/2)
+    6
+
+Or shorter (`Kernel` is imported automatically):
+
+    > Enum.reduce([1, 2, 3], &+/2)
+    6
+
+There are comparison operators for weak and strict equality:
+
+    > 1 == 1.0
+    true
+    > 1 === 1.0
+    false
