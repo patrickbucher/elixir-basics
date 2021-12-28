@@ -767,3 +767,161 @@ A lambda function captures variables bound at the time of its definition:
 
 The percentage 75 is used and not 99, because the first value was bound at the
 time of the function definition.
+
+## Higher-Level Types
+
+### Ranges
+
+A range of numbers can be expressed using the `..` notation:
+
+    > numbers = 1..10
+
+The `in` operator can be used to determine whether or not a number is within a
+range:
+
+    > 0 in numbers
+    false
+    > 10 in numbers
+    true
+
+A range is an enumerable, and, thus, can be processed using the functions of the
+`Enum` module:
+
+    > Enum.each(1..3, &IO.puts/1)
+    1
+    2
+    3
+
+### Keyword Lists
+
+Some functions, such as `IO.inspect/2` expect optional arguments as a keyword
+list, which can be constructed as a list of atom/value tuples:
+
+    > options = [{:width, 3}, {:limit, 2}]
+    > IO.inspect([100, 200, 300], options)
+    [100,
+     200,
+     ...]
+
+This alternative syntax makes the definition more elegant:
+
+    > options = [width: 3, limit: 2]
+    > IO.inspect([100, 200, 300], options)
+    [100,
+     200,
+     ...]
+
+Or even shorter without an intermediate variable and square brackets:
+
+    > IO.inspect([100, 200, 300], width: 3, limit: 2)
+    [100,
+     200,
+     ...]
+
+To write functions using optional arguments, consider the
+[Keyword](https://hexdocs.pm/elixir/Keyword.html) module (`salary.ex`):
+
+```elixir
+defmodule Salary do
+  def pay_out(employee, salary, opts \\ []) do
+    bonus = Keyword.get(opts, :bonus, 0)
+    taxes = Keyword.get(opts, :taxes, 0)
+    gross = salary + bonus
+    net = gross - gross * taxes
+    IO.puts("#{employee} earns $#{net}")
+  end
+end
+```
+
+The function `Salary.pay_out/3` now supports optional keywords:
+
+    $ iex salary.ex
+    > Salary.pay_out("Dilbert", 80000)
+    Dilbert earns $80000
+    > Salary.pay_out("Dilbert", 80000, bonus: 10000)
+    Dilbert earns $90000
+    > Salary.pay_out("Dilbert", 80000, bonus: 10000, taxes: 0.2)
+    Dilbert earns $7.2e4
+
+### MapSet
+
+Sets only contain each value once and are implemented as a `MapSet` (module
+[MapSet](https://hexdocs.pm/elixir/MapSet.html)):
+
+    > numbers = MapSet.new([1, 3, 6])
+    #MapSet<[1, 3, 6]>
+    > numbers = MapSet.put(numbers, 2)
+    #MapSet<[1, 2, 3, 6]>
+    > numbers = MapSet.put(numbers, 3)
+    #MapSet<[1, 2, 3, 6]>
+
+A `MapSet` is an enumerable:
+
+    > Enum.each(numbers, &IO.puts/1)
+    1
+    2
+    3
+    6
+
+### Date and Time
+
+Date and time objects can be conveniently be created using sigils:
+
+    > today = ~D[2021-12-28]
+    > today.year
+    2021
+    > today.month
+    12
+    > today.day
+    28
+
+    > lunch = ~T[12:30:00]
+    lunch.hour
+    > lunch.minute
+    30
+    > lunch.second
+    0
+
+The [Date](https://hexdocs.pm/elixir/Date.html) and
+[Time](https://hexdocs.pm/elixir/Time.html) module contain useful functions to
+work with those types.
+
+Date and time can be combined to a _naive_ date time, i.e. without time zone:
+
+    > lunch_today = ~N[2021-12-28 12:30:00]
+    > lunch_today.year
+    2021
+    > lunch_today.minute
+    30
+
+A time zone can be added as follows:
+
+    > lunch_today_utc = DateTime.from_naive!(lunch_today, "Etc/UTC")
+    ~U[2021-12-28 12:30:00Z]
+    > lunch_today_utc.time_zone
+    "Etc/UTC"
+
+See the modules [NaiveDateTime](https://hexdocs.pm/elixir/NaiveDateTime.html)
+and [DateTime](https://hexdocs.pm/elixir/DateTime.html).
+
+### IO Lists
+
+IO lists are special kinds of lists to build up data for I/O incrementally,
+which only must consist of integers (0..255), binaries, and other IO lists:
+
+    > output = [[['F', 'o'], 'o'], "ba", 'r']
+    > IO.puts(output)
+    Foobar
+
+Appending to a list is an O(n) operation, i.e. very efficient:
+
+    > output = []
+    []
+    > output = [output, "Hello"]
+    [[], "Hello"]
+    > output = [output, ", "]
+    [[[], "Hello"], ", "]
+    > output = [output, "World!"]
+    [[[[], "Hello"], ", "], "World!"]
+    > IO.puts(output)
+    Hello, World!
