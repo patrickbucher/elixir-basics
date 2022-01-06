@@ -956,3 +956,65 @@ There are comparison operators for weak and strict equality:
     true
     > 1 === 1.0
     false
+
+# Pattern Matching
+
+The matching operator `=` is more powerful than an assignment operator in other
+languages. A pattern on the left side matching the expression on the right side
+creates variable bindings:
+
+    > employee = {"Dilbert", 42}
+    > {name, age} = employee
+
+The pattern can contain constants that must be matched:
+
+    > dilbert = {:employee, "Dilbert", 42}
+    > dogbert = {:consultant, "Dogbert", 7}
+    > {:employee, name, _} = dilbert
+    > name
+    "Dilbert"
+    > {:employee, name, _} = dogbert
+    ** (MatchError) no match of right hand side value: {:consultant, "Dogbert", 7}
+
+For values not to be bound, the anonymous variable (`_`) can be used in the
+pattern to ignore them. A variable starting with `_` won't be bound, but has a
+descriptive name:
+
+    > {:employee, name, _age} = dilbert
+
+Functions like `File.read/1` return a tuple of either the form `{:ok, value}` or
+`{:error, reason}`, which can be matched accordingly:
+
+    > File.read("/home/patrick/.vimrc")
+    {:ok, "..."}
+    > File.read("/home/patrick/.foobar")
+    {:error, :enoent}
+
+Patterns can also be nested:
+
+    > corporation = {:anycorp, {:ceo, "Pointy Haired Boss"}}
+    > {:anycorp, {:ceo, ceo_name}} = corporation
+    > ceo_name
+    "Pointy Haired Boss"
+
+For values that are expected to be the same, the same binding can be used
+multiple times:
+
+    > red_rgb = {255, 0, 0}
+    > {red, other, other} = red_rgb
+    > red
+    255
+    > {value, value, value} = red_rgb
+    ** (MatchError) no match of right hand side value: {255, 0, 0}
+
+For matching against the content of a variable, use the pin operator `^`:
+
+    > redish_color = {255, 34, 78}
+    > max_rgb = 255
+    > {^max_rgb, green, blue} = redish_color
+    > green
+    34
+    > blue
+    78
+
+TODO: p. 67 Matching lists
