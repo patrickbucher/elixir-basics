@@ -966,6 +966,8 @@ creates variable bindings:
     > employee = {"Dilbert", 42}
     > {name, age} = employee
 
+## Matching with Constants
+
 The pattern can contain constants that must be matched:
 
     > dilbert = {:employee, "Dilbert", 42}
@@ -990,12 +992,16 @@ Functions like `File.read/1` return a tuple of either the form `{:ok, value}` or
     > File.read("/home/patrick/.foobar")
     {:error, :enoent}
 
+## Nested Patterns
+
 Patterns can also be nested:
 
     > corporation = {:anycorp, {:ceo, "Pointy Haired Boss"}}
     > {:anycorp, {:ceo, ceo_name}} = corporation
     > ceo_name
     "Pointy Haired Boss"
+
+## Re-using Bindings
 
 For values that are expected to be the same, the same binding can be used
 multiple times:
@@ -1007,6 +1013,8 @@ multiple times:
     > {value, value, value} = red_rgb
     ** (MatchError) no match of right hand side value: {255, 0, 0}
 
+## Pinning
+
 For matching against the content of a variable, use the pin operator `^`:
 
     > redish_color = {255, 34, 78}
@@ -1017,4 +1025,101 @@ For matching against the content of a variable, use the pin operator `^`:
     > blue
     78
 
-TODO: p. 67 Matching lists
+## Matching Lists
+
+Lists can be matched using individual elements:
+
+    > [a, b, c] = [1, 2, 3]
+    > a
+    1
+
+Or by splitting the head from the tail:
+
+    > [head | tail] = [1, 2, 3]
+    > head
+    1
+    > tail
+    [2, 3]
+
+## Matching Maps
+
+Maps can be matched partially:
+
+    > dilbert = %{name: "Dilbert", age: 42, job: "Engineer"}
+    > %{name: name} = dilbert
+    > name
+    "Dilbert"
+
+## Matching Binaries
+
+Binaries can be matched completely:
+
+    > numbers = <<1, 2, 3>>
+    > <<a, b, c>> = numbers
+    > c
+    3
+
+Or using a the special `:: binary` syntax:
+
+    > <<first, rest :: binary>> = numbers
+    > first
+    1
+    > rest
+    <<2, 3>>
+
+Or using a specified amounts of bits to be matched:
+
+    > <<a :: 2, b :: 4, c :: 2>> = << 151 >>
+    > a
+    2
+    > b
+    5
+    > c
+    3
+
+Here, 151 (`10010111`) is split into 2 (`10`), 5 (`0101`), and 3 (`11`).
+
+## Matching Strings
+
+Since strings are based on binaries, they can be matched the same:
+
+    > <<a, b, c>> = "ABC"
+    > a
+    65
+    > b
+    66
+    > c
+    67
+
+This is error-prone when dealing with unicode strings. Matching the beginning of
+a string is more practical:
+
+    > command = "ping paedubucher.ch"
+    > "ping " <> domain = command
+    > domain
+    "paedubucher.ch"
+
+## Compund Matches
+
+Matches can be chained to extract values on different levels on a single line:
+
+    > :calendar.local_time()
+    {{2022, 1, 7}, {7, 37, 44}}
+    > {{year, _, _}, {hour, _, _}} = {date, time} = now = :calendar.local_time()
+    > year
+    2022
+    > hour
+    7
+    > date
+    {2022, 1, 7}
+    > time
+    {7, 39, 4}
+    > now
+    {{2022, 1, 7}, {7, 39, 4}}
+
+The sequence doesn't matter, as long as the patterns all match:
+
+    > {date, time} = {{year, _, _}, {hour, _, _}} = now = :calendar.local_time()
+    {{2022, 1, 7}, {7, 40, 26}}
+
+TODO: p. 72 (Matching with functions)
