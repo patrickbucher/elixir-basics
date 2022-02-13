@@ -913,7 +913,7 @@ which only must consist of integers (0..255), binaries, and other IO lists:
     > IO.puts(output)
     Foobar
 
-Appending to a list is an O(n) operation, i.e. very efficient:
+Appending to a list is an O(1) operation, i.e. very efficient:
 
     > output = []
     []
