@@ -994,7 +994,7 @@ Functions like `File.read/1` return a tuple of either the form `{:ok, value}` or
 
 ## Nested Patterns
 
-Patterns can also be nested:
+Patterns can be nested:
 
     > corporation = {:anycorp, {:ceo, "Pointy Haired Boss"}}
     > {:anycorp, {:ceo, ceo_name}} = corporation
@@ -1003,8 +1003,8 @@ Patterns can also be nested:
 
 ## Re-using Bindings
 
-For values that are expected to be the same, the same binding can be used
-multiple times:
+For values that are expected to be equal, the same binding can be used multiple
+times:
 
     > red_rgb = {255, 0, 0}
     > {red, other, other} = red_rgb
@@ -1059,7 +1059,8 @@ Binaries can be matched completely:
     > c
     3
 
-Or using a the special `:: binary` syntax:
+Or using a the special `:: binary` syntax, indicating that the `rest` is a
+binary of arbitrary length:
 
     > <<first, rest :: binary>> = numbers
     > first
