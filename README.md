@@ -1123,4 +1123,86 @@ The sequence doesn't matter, as long as the patterns all match:
     > {date, time} = {{year, _, _}, {hour, _, _}} = now = :calendar.local_time()
     {{2022, 1, 7}, {7, 40, 26}}
 
-TODO: p. 72 (Matching with functions)
+## Matching Functions
+
+When multiple functions with the same name are available, the arguments are
+matched against the parameter patterns defined by the functions (`area.ex`):
+
+```elixir
+defmodule Area do
+  def area({:square, s}) when is_number(s) and s > 0 do
+    s * s
+  end
+  def area({:rectangle, w, h}) when is_number(w) and is_number(h) and w > 0 and h > 0 do
+    w * h
+  end
+  def area({:circle, r}) when is_number(r) and r > 0 do
+    :math.pi * :math.pow(r, 2)
+  end
+  def area(_) do
+    {:invalid_shape}
+  end
+end
+```
+
+Two mechanisms are used to find the proper clause upon a function call:
+
+1. Structural matching of the argument: It must be a tuple beginning with one of
+   the given atom (`:square`, `:rectangle`, etc.).
+2. Guards: Constraints such as `is_number` must be fulfilled. (See the
+   [Guards](https://hexdocs.pm/elixir/guards.html) documentation for a list of
+   allowed expressions.)
+
+The last clause, `area(_)`, will match any caller providing a single argument:
+
+    $ iex area.ex
+    > Area.area({:square, 3})
+    9
+    > Area.area({:rectangle, 2, 3})
+    6
+    > Area.area({:circle, 5})
+    78.53981633974483
+    > Area.area({:triangle, 4, 3, 2})
+    {:invalid_shape}
+    > Area.square({:square, 3, 2})
+    * (UndefinedFunctionError) function Area.square/1 is undefined or private
+    Area.square({:square, 3, 2})
+
+The order of the clauses matters: Make sure that the _catch-all_ clause
+`area(_)` is listed as the last one.
+
+All the clauses of the same arity are captured together:
+
+    > area_fun = &Area.area/1
+    > area_fun.({:square, 3})
+    9
+    > area_fun.({:rectangle, 3, 2})
+    6
+
+### Multiclause Lambdas
+
+Lambdas can also consist of multiple clauses (`testnum.exs`):
+
+```elixir
+test_num = 
+  fn
+    x when is_number(x) and x > 0 ->
+      :positive
+    x when is_number(x) and x < 0 ->
+      :negative
+    x when is_number(0) and x == 0 ->
+      :zero
+  end
+
+IO.puts(test_num.(13))
+IO.puts(test_num.(-6))
+IO.puts(test_num.(0))
+```
+
+Notice that clauses are not terminated explicitly; they end when the next clause
+begins, or the lambda expression ends.
+
+    $ elixir testnum.exs
+    positive
+    negative
+    zero
