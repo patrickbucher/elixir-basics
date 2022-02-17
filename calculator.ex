@@ -4,6 +4,7 @@ defmodule Calculator do
       a + b
     end
   end
+
   defmodule Advanced do
     def pow(a, b) do
       Integer.pow(a, b)
