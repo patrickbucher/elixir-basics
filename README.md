@@ -96,6 +96,7 @@ defmodule Geometry do
   def rectangle_area(a, b) do
     a * b
   end
+
   def rectangle_perimeter(a, b) do
     2 * a + 2 * b
   end
@@ -123,6 +124,7 @@ defmodule Calculator do
       a + b
     end
   end
+
   defmodule Advanced do
     def pow(a, b) do
       Integer.pow(a, b)
@@ -150,6 +152,7 @@ defmodule Geometry do
   def rectangle_area(a, b) do
     a * b
   end
+
   def rectangle_perimeter(a, b) do
     2 * a + 2 * b
   end
@@ -158,6 +161,7 @@ end
 defmodule HelloCalculator do
   import IO
   alias Geometry, as: Geom
+
   def rect_info(a, b) do
     area = Geom.rectangle_area(a, b)
     perimeter = Geom.rectangle_perimeter(a, b)
@@ -272,22 +276,27 @@ achieved and the maximum points achievable (`swiss_grading.ex`):
 ```elixir
 defmodule SwissGrading do
   def grade(points, max) do
-    points_ratio = ratio(points, max)
-    exact_grade = add(multiply(points_ratio, 5), 1)
-    final_grade = round(exact_grade, 0.1)
-    final_grade
+    points
+    |> ratio(max)
+    |> multiply(5)
+    |> add(1)
+    |> round(0.1)
   end
+
   defp ratio(x, y) do
     x / y
   end
+
   defp multiply(x, y) do
     x * y
   end
+
   defp add(x, y) do
     x + y
   end
+
   defp round(x, precision) do
-    round(x * 1/precision) * precision
+    round(x * 1 / precision) * precision
   end
 end
 ```
@@ -335,13 +344,14 @@ denoting that the `grade()` function of the `SwissGrading` module expects `2`
 arguments.
 
 Lower-arity functions often use higher-arity functions to perform their work, as
-`inc/1` does using `inc/2` (`Increment.ex`):
+`inc/1` does using `inc/2`:
 
 ```elixir
 defmodule Increment do
   def inc(a, x) do
     a + x
   end
+
   def inc(a) do
     inc(a, 1)
   end
@@ -349,7 +359,7 @@ end
 ```
 
 The two function definitions can be merged by using a default value for the `x`
-argument using the `\\` operator:
+argument using the `\\` operator (`increment.ex`):
 
 ```elixir
 defmodule Increment do
@@ -1133,12 +1143,15 @@ defmodule Area do
   def area({:square, s}) when is_number(s) and s > 0 do
     s * s
   end
+
   def area({:rectangle, w, h}) when is_number(w) and is_number(h) and w > 0 and h > 0 do
     w * h
   end
+
   def area({:circle, r}) when is_number(r) and r > 0 do
-    :math.pi * :math.pow(r, 2)
+    :math.pi() * :math.pow(r, 2)
   end
+
   def area(_) do
     {:invalid_shape}
   end
@@ -1184,15 +1197,16 @@ All the clauses of the same arity are captured together:
 Lambdas can also consist of multiple clauses (`testnum.exs`):
 
 ```elixir
-test_num = 
-  fn
-    x when is_number(x) and x > 0 ->
-      :positive
-    x when is_number(x) and x < 0 ->
-      :negative
-    x when is_number(0) and x == 0 ->
-      :zero
-  end
+test_num = fn
+  x when is_number(x) and x > 0 ->
+    :positive
+
+  x when is_number(x) and x < 0 ->
+    :negative
+
+  x when is_number(0) and x == 0 ->
+    :zero
+end
 
 IO.puts(test_num.(13))
 IO.puts(test_num.(-6))
