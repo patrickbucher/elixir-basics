@@ -1,6 +1,8 @@
 defmodule FizzBuzz do
   defmodule UnlessIfElse do
-    def fizzbuzz(min, max), do: Enum.each(min..max, &fizzbuzz/1)
+    def fizzbuzz(min, max) when min <= max do
+      Enum.each(min..max, &fizzbuzz/1)
+    end
 
     defp fizzbuzz(x) do
       unless rem(x, 3) == 0 or rem(x, 5) == 0 do
@@ -22,7 +24,10 @@ defmodule FizzBuzz do
   end
 
   defmodule Multiclause do
-    def fizzbuzz(min, max), do: Enum.each(min..max, &fizzbuzz/1)
+    def fizzbuzz(min, max) when min <= max do
+      Enum.each(min..max, &fizzbuzz/1)
+    end
+
     defp fizzbuzz(x) when rem(x, 15) == 0, do: IO.puts("FizzBuzz")
     defp fizzbuzz(x) when rem(x, 3) == 0, do: IO.puts("Fizz")
     defp fizzbuzz(x) when rem(x, 5) == 0, do: IO.puts("Buzz")
@@ -30,7 +35,9 @@ defmodule FizzBuzz do
   end
 
   defmodule Cond do
-    def fizzbuzz(min, max), do: Enum.each(min..max, &fizzbuzz/1)
+    def fizzbuzz(min, max) when min <= max do
+      Enum.each(min..max, &fizzbuzz/1)
+    end
 
     defp fizzbuzz(x) do
       cond do
@@ -43,7 +50,9 @@ defmodule FizzBuzz do
   end
 
   defmodule Case do
-    def fizzbuzz(min, max), do: Enum.each(min..max, &fizzbuzz/1)
+    def fizzbuzz(min, max) when min <= max do
+      Enum.each(min..max, &fizzbuzz/1)
+    end
 
     defp fizzbuzz(x) do
       case {rem(x, 3), rem(x, 5)} do
