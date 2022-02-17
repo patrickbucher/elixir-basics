@@ -1220,3 +1220,105 @@ begins, or the lambda expression ends.
     positive
     negative
     zero
+
+## Conditionals
+
+These four implementations of FizzBuzz demonstrate different approaches for
+dealing with conditionals (`fizzbuzz.ex`):
+
+```elixir
+defmodule FizzBuzz do
+  defmodule UnlessIfElse do
+    def fizzbuzz(min, max) when min <= max do
+      Enum.each(min..max, &fizzbuzz/1)
+    end
+
+    defp fizzbuzz(x) do
+      unless rem(x, 3) == 0 or rem(x, 5) == 0 do
+        IO.puts(x)
+      end
+
+      if rem(x, 15) == 0 do
+        IO.puts("FizzBuzz")
+      else
+        if rem(x, 3) == 0 do
+          IO.puts("Fizz")
+        else
+          if rem(x, 5) == 0 do
+            IO.puts("Buzz")
+          end
+        end
+      end
+    end
+  end
+
+  defmodule Multiclause do
+    def fizzbuzz(min, max) when min <= max do
+      Enum.each(min..max, &fizzbuzz/1)
+    end
+
+    defp fizzbuzz(x) when rem(x, 15) == 0, do: IO.puts("FizzBuzz")
+    defp fizzbuzz(x) when rem(x, 3) == 0, do: IO.puts("Fizz")
+    defp fizzbuzz(x) when rem(x, 5) == 0, do: IO.puts("Buzz")
+    defp fizzbuzz(x), do: IO.puts(x)
+  end
+
+  defmodule Cond do
+    def fizzbuzz(min, max) when min <= max do
+      Enum.each(min..max, &fizzbuzz/1)
+    end
+
+    defp fizzbuzz(x) do
+      cond do
+        rem(x, 15) == 0 -> IO.puts("FizzBuzz")
+        rem(x, 3) == 0 -> IO.puts("Fizz")
+        rem(x, 5) == 0 -> IO.puts("Buzz")
+        true -> IO.puts(x)
+      end
+    end
+  end
+
+  defmodule Case do
+    def fizzbuzz(min, max) when min <= max do
+      Enum.each(min..max, &fizzbuzz/1)
+    end
+
+    defp fizzbuzz(x) do
+      case {rem(x, 3), rem(x, 5)} do
+        {0, 0} -> IO.puts("FizzBuzz")
+        {0, _} -> IO.puts("Fizz")
+        {_, 0} -> IO.puts("Buzz")
+        {_, _} -> IO.puts(x)
+      end
+    end
+  end
+end
+```
+
+All modules have a function `fizzbuzz/2` that takes the lower and upper bounds
+for a range of numbers to process, and a function `fizzbuzz/1` that deals with
+an individual number; the latter function being called from the former with each
+element out of the range. The function `fizzbuzz/1` is implemented using
+different language constructs in each sub-module:
+
+- `UnlessIfElse` uses branching as known from procedural languages with
+  constructs like `unless`, `if`, and `else`.
+- `Multiclause` uses guards to dispatch the function call to the right clause.
+- `Cond` makes use of the `cond` construct, which provides a branching facility
+  with multiple alternatives, reminiscent of `if`/`else if` from procedural
+  languages. The last condition, `true`, is similar to the `default` arm in
+  the `switch`/`case` construct from procedural programming languages.
+- `Case` makes use of the `case` construct, which is quite similar to `cond`,
+  but works rather like `switch`/`case` than `if`/`else if` from procedural
+  language, because all the arms are based on the initially stated expression.
+  It is far more powerful than `switch`/`case` though, because it uses pattern
+  matching instead of a simple equality check.
+
+The implementation using `cond` is the shortest. The implementation using `case`
+arguably the clearest; the multiclause implementation the most idiomatic from a
+functional programming perspective. The implementation using `if`, `unless`, and
+`else` looks the most convoluted; those constructs are too blunt for dealing
+with many possibilities.
+
+Notice that all the constructs return a value; however, only the side effect of
+`IO.puts/1` is of interest in this example.
