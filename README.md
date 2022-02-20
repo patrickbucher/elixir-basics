@@ -1322,3 +1322,139 @@ with many possibilities.
 
 Notice that all the constructs return a value; however, only the side effect of
 `IO.puts/1` is of interest in this example.
+
+## With
+
+Consider this list of employees (`users.exs`):
+
+```elixir
+employees = [
+  %{
+    "name" => "Dilbert",
+    "username" => "dilbo",
+    "password" => "Uyee7oox0OK8johG",
+    "email" => "dilbo@corp.com",
+    "age" => 42
+  },
+  %{
+    "name" => "Pointy Haired Boss",
+    "username" => "theboss",
+    "email" => "boss@corp.com",
+    "age" => 52,
+    "golf_handicap" => 17,
+    "cars_owned" => 3
+  },
+  %{
+    "name" => "Wally",
+    "username" => "lazybone",
+    "password" => "qwerty",
+    "email" => "wally@corp.com",
+    "age" => 47,
+    "years_wasted" => 27
+  },
+  %{
+    "name" => "Dogbert",
+    "email" => "doggo@corp.com",
+    "age" => 13,
+    "current_lawsuits" => 3,
+    "allegations" => ["fraud", "arson", "tax evasion"]
+  },
+  %{
+    "name" => "Alice",
+    "username" => "alicepro",
+    "password" => "IHateThisPlace",
+    "email" => "alice@corp.com",
+    "age" => 39
+  },
+  %{
+    "name" => "Catbert",
+    "username" => "thecat",
+    "password" => "23jd92039d20",
+    "age" => 11,
+    "years_in_jail" => 5,
+    "former_employers" => ["aramco", "facebook"]
+  }
+]
+```
+
+The list's items are heterogenous, i.e. the maps contain different sets of keys:
+Some contain all the credentials (`"username"`, `"email"`, and `"password"`),
+some don't. The credentials shall be extracted and printed using this pipeline:
+
+```elixir
+employees |> Enum.map(&Credentials.extract/1) |> Enum.each(&IO.inspect/1)
+```
+
+The `Credentials` module is implemented as follows (`users.exs`):
+
+```elixir
+defmodule Credentials do
+  def extract(employee) do
+    case extract_username(employee) do
+      {:error, reason} ->
+        {:error, reason}
+
+      {:ok, username} ->
+        case extract_email(employee) do
+          {:error, reason} ->
+            {:error, reason}
+
+          {:ok, email} ->
+            case extract_password(employee) do
+              {:error, reason} ->
+                {:error, reason}
+
+              {:ok, password} ->
+                %{username: username, email: email, password: password}
+            end
+        end
+    end
+  end
+
+  defp extract_username(%{"username" => username}), do: {:ok, username}
+  defp extract_username(_), do: {:error, "username missing"}
+
+  defp extract_email(%{"email" => email}), do: {:ok, email}
+  defp extract_email(_), do: {:error, "email missing"}
+
+  defp extract_password(%{"password" => password}), do: {:ok, password}
+  defp extract_password(_), do: {:error, "password missing"}
+end
+```
+
+The private helper functions on the bottom are used to extract specific fields.
+They return `{:ok, value}`, if the desired field is found, and `{:error,
+reason}` otherwise.
+
+The `extract/1` function stops after the first field of the item isn't found and
+propagates the error to the caller. This approach using nested `case` constructs
+doesn't scale well, because there's an additional indentation level for each
+field to be extracted.
+
+This code can be rewritten using the `with` special form:
+
+```elixir
+def extract(employee) do
+  with {:ok, username} <- extract_username(employee),
+       {:ok, email} <- extract_email(employee),
+       {:ok, password} <- extract_password(employee) do
+    %{username: username, email: email, password: password}
+  end
+end
+```
+
+The pattern on the left must be matched by the expression on the right. If
+matching, the next pattern is matched against the expression; otherwise the
+unmatching expression is returned:
+
+    $ elixir users.exs
+    %{email: "dilbo@corp.com", password: "Uyee7oox0OK8johG", username: "dilbo"}
+    {:error, "password missing"}
+    %{email: "wally@corp.com", password: "qwerty", username: "lazybone"}
+    {:error, "username missing"}
+    %{email: "alice@corp.com", password: "IHateThisPlace", username: "alicepro"}
+    {:error, "email missing"}
+
+See the documentation on
+[`with/1`](https://hexdocs.pm/elixir/Kernel.SpecialForms.html#with/1) for
+further details.
