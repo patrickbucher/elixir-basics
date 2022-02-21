@@ -1514,3 +1514,8 @@ frame:
 
 Except for very small recursive tasks, recursive functions should be implemented
 using tail-calls.
+
+Accumulator parameters are an implementation detail. Therefore, a public
+interface without accumulators is provided. The functions dealing with
+accumulators are declared as private; the public interface deals with the
+initialization of the accumulator.
