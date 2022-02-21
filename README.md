@@ -1458,3 +1458,56 @@ unmatching expression is returned:
 See the documentation on
 [`with/1`](https://hexdocs.pm/elixir/Kernel.SpecialForms.html#with/1) for
 further details.
+
+# Iterations
+
+## Recursion and Tail-Call Optimization
+
+Since there are no loop constructs, iterations must be implemented using
+recursion (`factorial.ex`):
+
+```elixir
+defmodule Factorial do
+  def factorial(0), do: 1
+  def factorial(x) when x > 0, do: x * factorial(x - 1)
+
+  def factorial_tail(0), do: 1
+  def factorial_tail(x) when x > 0, do: factorial_tail(x, 1)
+  defp factorial_tail(0, acc), do: acc
+  defp factorial_tail(x, acc), do: factorial_tail(x - 1, x * acc)
+end
+```
+
+The first implementation (`factorial`) uses classic iteration. For every
+recursive function call, a new stack frame is created:
+
+    Factorial.factorial(5)
+        5 * Factorial.factorial(4)
+            5 * 4 * Factorial.factorial(3)
+                5 * 4 * 3 * Factorial.factorial(2)
+                    5 * 4 * 3 * 2 * Factorial.factorial(1)
+                        5 * 4 * 3 * 2 * 1 * Factorial.factorial(0)
+                            5 * 4 * 3 * 2 * 1 * 1
+                        5 * 4 * 3 * 2 * 1
+                    5 * 4 * 3 * 2
+                5 * 4 * 6
+            5 * 24
+        120
+
+The second implementation (`factorial_tail`) uses tail-call optimization. The
+intermediate result is carried over using an accumulator parameter. Since the
+subsequent function call is the last thing the function does, and there's no
+pending multiplication to be done, the runtime can re-use the existing stack
+frame:
+
+    Factorial.factorial_tail(5)
+    Factorial.factorial_tail(5, 1)
+    Factorial.factorial_tail(4, 5)
+    Factorial.factorial_tail(3, 20)
+    Factorial.factorial_tail(2, 60)
+    Factorial.factorial_tail(1, 120)
+    Factorial.factorial_tail(0, 120)
+    120
+
+Except for very small recursive tasks, recursive functions should be implemented
+using tail-calls.
