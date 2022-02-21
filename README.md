@@ -1497,6 +1497,11 @@ recursive function call, a new stack frame is created:
             5 * 24
         120
 
+The first clause is the _basic case_, which is often based on a mathematical
+definition (e.g. _the factorial of 0 is 1_). The second clause is the _general
+case_, which makes subsequent calls to itself in order to reduce the problem
+towards the basic case.
+
 The second implementation (`factorial_tail`) uses tail-call optimization. The
 intermediate result is carried over using an accumulator parameter. Since the
 subsequent function call is the last thing the function does, and there's no
@@ -1515,7 +1520,7 @@ frame:
 Except for very small recursive tasks, recursive functions should be implemented
 using tail-calls.
 
-Accumulator parameters are an implementation detail. Therefore, a public
-interface without accumulators is provided. The functions dealing with
-accumulators are declared as private; the public interface deals with the
+Accumulator parameters are an implementation detail. Therefore, two clauses
+without accumulators are exported. The clauses dealing with accumulators are not
+exported, and the exported clause for the general case deals with the
 initialization of the accumulator.
