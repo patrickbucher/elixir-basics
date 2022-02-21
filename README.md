@@ -25,7 +25,7 @@ Run Elixir interactively:
     Hello, World!
     :ok
 
-Write an Elixir script (`hello.exs`, the `s` stands for "script"):
+Write an Elixir script (`examples/hello.exs`, the `s` stands for "script"):
 
 ```elixir
 IO.puts("Hello, World!")
@@ -89,7 +89,7 @@ Variables cannot be _changed_, but _rebound_:
 
 # Modules
 
-Functions are grouped together in Modules (`geometry.ex`):
+Functions are grouped together in Modules (`examples/geometry.ex`):
 
 ```elixir
 defmodule Geometry do
@@ -115,7 +115,7 @@ Module names are written in CamelCase; alphanumeric characters and the dot are
 allowed in them.
 
 Multiple modules can be defined in the same file. Modules can also be nested
-hierarchically (`calculator.ex`):
+hierarchically (`examples/calculator.ex`):
 
 ```elixir
 defmodule Calculator do
@@ -135,7 +135,7 @@ end
 
 The module names are qualified with a dot:
 
-    $ iex calculator.ex
+    $ iex examples/calculator.ex
     > Calculator.Basic.add(5, 3)
     8
     > Calculator.Advanced.pow(5, 2)
@@ -145,7 +145,7 @@ The module names are qualified with a dot:
 
 Other modules can be imported into the current module, so that function calls
 don't have to be qualified using their module name. It's also possible to use an
-alias name for an imported module (`hello_calculator.ex`):
+alias name for an imported module (`examples/hello_calculator.ex`):
 
 ```elixir
 defmodule Geometry do
@@ -174,7 +174,7 @@ The module `HelloCalculator` imports `IO`, so `puts` can be used without further
 qualification (instead of `IO.puts`). `Geometry` is also imported, but using an
 alias, so that it can be used as `Geom`:
 
-    $ iex hello_calculator.ex
+    $ iex examples/hello_calculator.ex
     > HelloCalculator.rect_info(3, 5)
     Rectangle(3, 5): Area 15, Perimeter: 16
     :ok
@@ -185,7 +185,7 @@ automatically, so that its functions can be used without further qualification.
 ## Module Attributes
 
 Module attributes are used to define constants and to provide documentation
-(`free_fall.ex`):
+(`examples/free_fall.ex`):
 
 ```elixir
 defmodule FreeFall do
@@ -215,7 +215,7 @@ using the [`dialyzer`](https://www.erlang.org/doc/man/dialyzer.html) The module
 needs to be compiled in order to have this documentation accessible during
 runtime:
 
-    $ elixirc free_fall.ex
+    $ elixirc examples/free_fall.ex
     $ file Elixir.FreeFall.beam
     Elixir.FreeFall.beam: Erlang BEAM file
     $ iex
@@ -271,7 +271,7 @@ Notice the `,` after the parameter list, the `:` after `do`, and the missing
 ## Function Composition
 
 The module `SwissGrading` computes rounded grades from a number of points
-achieved and the maximum points achievable (`swiss_grading.ex`):
+achieved and the maximum points achievable (`examples/swiss_grading.ex`):
 
 ```elixir
 defmodule SwissGrading do
@@ -359,7 +359,7 @@ end
 ```
 
 The two function definitions can be merged by using a default value for the `x`
-argument using the `\\` operator (`increment.ex`):
+argument using the `\\` operator (`examples/increment.ex`):
 
 ```elixir
 defmodule Increment do
@@ -829,7 +829,7 @@ Or even shorter without an intermediate variable and square brackets:
      ...]
 
 To write functions using optional arguments, consider the
-[Keyword](https://hexdocs.pm/elixir/Keyword.html) module (`salary.ex`):
+[Keyword](https://hexdocs.pm/elixir/Keyword.html) module (`examples/salary.ex`):
 
 ```elixir
 defmodule Salary do
@@ -845,7 +845,7 @@ end
 
 The function `Salary.pay_out/3` now supports optional keywords:
 
-    $ iex salary.ex
+    $ iex examples/salary.ex
     > Salary.pay_out("Dilbert", 80000)
     Dilbert earns $80000
     > Salary.pay_out("Dilbert", 80000, bonus: 10000)
@@ -1136,7 +1136,8 @@ The sequence doesn't matter, as long as the patterns all match:
 ## Matching Functions
 
 When multiple functions with the same name are available, the arguments are
-matched against the parameter patterns defined by the functions (`area.ex`):
+matched against the parameter patterns defined by the functions
+(`examples/area.ex`):
 
 ```elixir
 defmodule Area do
@@ -1168,7 +1169,7 @@ Two mechanisms are used to find the proper clause upon a function call:
 
 The last clause, `area(_)`, will match any caller providing a single argument:
 
-    $ iex area.ex
+    $ iex examples/area.ex
     > Area.area({:square, 3})
     9
     > Area.area({:rectangle, 2, 3})
@@ -1194,7 +1195,7 @@ All the clauses of the same arity are captured together:
 
 ### Multiclause Lambdas
 
-Lambdas can also consist of multiple clauses (`testnum.exs`):
+Lambdas can also consist of multiple clauses (`examples/testnum.exs`):
 
 ```elixir
 test_num = fn
@@ -1216,7 +1217,7 @@ IO.puts(test_num.(0))
 Notice that clauses are not terminated explicitly; they end when the next clause
 begins, or the lambda expression ends.
 
-    $ elixir testnum.exs
+    $ elixir examples/testnum.exs
     positive
     negative
     zero
@@ -1224,7 +1225,7 @@ begins, or the lambda expression ends.
 ## Conditionals
 
 These four implementations of FizzBuzz demonstrate different approaches for
-dealing with conditionals (`fizzbuzz.ex`):
+dealing with conditionals (`examples/fizzbuzz.ex`):
 
 ```elixir
 defmodule FizzBuzz do
@@ -1325,7 +1326,7 @@ Notice that all the constructs return a value; however, only the side effect of
 
 ## With
 
-Consider this list of employees (`users.exs`):
+Consider this list of employees (`examples/users.exs`):
 
 ```elixir
 employees = [
@@ -1385,7 +1386,7 @@ some don't. The credentials shall be extracted and printed using this pipeline:
 employees |> Enum.map(&Credentials.extract/1) |> Enum.each(&IO.inspect/1)
 ```
 
-The `Credentials` module is implemented as follows (`users.exs`):
+The `Credentials` module is implemented as follows (`examples/users.exs`):
 
 ```elixir
 defmodule Credentials do
@@ -1447,7 +1448,7 @@ The pattern on the left must be matched by the expression on the right. If
 matching, the next pattern is matched against the expression; otherwise the
 unmatching expression is returned:
 
-    $ elixir users.exs
+    $ elixir examples/users.exs
     %{email: "dilbo@corp.com", password: "Uyee7oox0OK8johG", username: "dilbo"}
     {:error, "password missing"}
     %{email: "wally@corp.com", password: "qwerty", username: "lazybone"}
@@ -1467,7 +1468,7 @@ therefore, must be implemented using recursion.
 ## Recursion and Tail-Call Optimization
 
 The module `Factorial` implements a factorial function in two ways
-(`factorial.ex`):
+(`examples/factorial.ex`):
 
 ```elixir
 defmodule Factorial do
