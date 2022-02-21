@@ -1461,10 +1461,13 @@ further details.
 
 # Iterations
 
+Elixir has no loop constructs such as `while` and `do`/`while`. Iterations,
+therefore, must be implemented using recursion.
+
 ## Recursion and Tail-Call Optimization
 
-Since there are no loop constructs, iterations must be implemented using
-recursion (`factorial.ex`):
+The module `Factorial` implements a factorial function in two ways
+(`factorial.ex`):
 
 ```elixir
 defmodule Factorial do
