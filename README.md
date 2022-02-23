@@ -1525,3 +1525,86 @@ Accumulator parameters are an implementation detail. Therefore, two clauses
 without accumulators are exported. The clauses dealing with accumulators are not
 exported, and the exported clause for the general case deals with the
 initialization of the accumulator.
+
+## Higher-Order Functions
+
+Iterations often are performed over existing enumerations of values. The
+[Enum](https://hexdocs.pm/elixir/Enum.html) module provides a lot of functions
+for this purpose.
+
+Consider this `Iteration` module (`examples/iteration.ex`):
+
+```elixir
+defmodule Iteration do
+  def each([head], func) do
+    func.(head)
+  end
+
+  def each([head | tail], func) do
+    func.(head)
+    each(tail, func)
+  end
+end
+```
+
+Which can be used as follows:
+
+    $ iex examples/iteration.ex
+    > Iteration.each([1, 2, 3], &IO.puts/1)
+    1
+    2
+    3
+
+The same can be achieved using `Enum.each/2` without writing any recursive code:
+
+    $ iex
+    > Enum.each([1, 2, 3], &IO.puts/1)
+    1
+    2
+    3
+
+_Higher-order functions_, such as `Enum.each/2`, expect a function as an
+argument, and/or return a function as their return value. The _filter, map,
+reduce_ pattern is a common combination of such higher-order functions:
+
+- _filter_: Only retain elements matching a certain condition (as defined in a
+  predicate function).
+- _map_: Transform each element using the given function into another value.
+- _reduce_: Combine all the values to a single one.
+
+`HigherOrder.sum_of_squares/1` accepts an enumeration of values, only retains
+the numbers (filter), squares them (map), and sums up those values (reduce) in a
+pipeline (`examples/higher_order/1`):
+
+```elixir
+defmodule HigherOrder do
+  def sum_of_squares(values) do
+    values
+    |> Enum.filter(fn v -> is_number(v) end)
+    |> Enum.map(fn v -> v * v end)
+    |> Enum.reduce(fn v, acc -> v + acc end)
+  end
+end
+```
+
+Which can be used as follows:
+
+    $ iex examples/higher_order.ex
+    > HigherOrder.sum_of_squares(["foo", 3, 2, "bar", 4])
+    29
+
+Notice that `Enum.sum/1` could have been used instead of `Enum.reduce/2`:
+
+    $ iex
+    > Enum.sum([1, 2, 3])
+    6
+
+`Enum.reduce/3` accepts an additional initialization value for the accumulator:
+
+    $ iex
+    > Enum.reduce([1, 2, 3], 100, &+/2)
+    106
+
+The sum of the given enumeration (1 + 2 + 3 = 6) is added up to the provided
+accumulator of 100. Instead of defining a lambda for summing up two values (`fn
+a, b -> a + b end`), the `Kernel.+/2` function is captured as a lambda (`&+/2`).
