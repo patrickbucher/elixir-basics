@@ -1682,3 +1682,74 @@ Also, an optional filter clause can be defined (here: `i*j < 10`):
 
 See [for special form](https://hexdocs.pm/elixir/Kernel.SpecialForms.html#for/1)
 for further details.
+
+## Streams
+
+The `Enum` module works _eagerly_, i.e. it performs is work as its functions are
+invoked on the entire collection. Consider the function `even_fizz_buzz_enum`
+(`examples/special_numbers.ex`):
+
+```elixir
+defmodule SpecialNumbers do
+  def even_fizz_buzz_enum(n) do
+    1..100
+    |> Enum.filter(fn x -> rem(x, 2) == 0 end)
+    |> Enum.filter(fn x -> rem(x, 3) == 0 end)
+    |> Enum.filter(fn x -> rem(x, 5) == 0 end)
+    |> Enum.take(n)
+  end
+end
+```
+
+The function is supposed to return `n` elements that are divisible without
+remainder by 2, 3, and 5. There are two problems:
+
+First, each invocation of the `filter` function iterates over the entire
+collection it's called on. (Reversing the order of the filter operations would
+reduce the workload, because less numbers are divisible by 5 then by 2.)
+
+Second, the function only works for small `n` with the given range:
+
+    $ iex examples/special_numbers.ex
+    > SpecialNumbers.even_fizz_buzz_enum(3)
+    [30, 60, 90]
+    > SpecialNumbers.even_fizz_buzz_enum(10)
+    [30, 60, 90]
+
+In order to support bigger `n`, the initial range needed to be way bigger,
+increasing the performance penalty by the multiple iterations necessary.
+
+The [`Stream`](https://hexdocs.pm/elixir/Stream.html) module is the lazy brother
+of `Enum`. Rather than performing the operations as requested, its functions
+keep track of the operations to be performed on each element. An eager
+operation, like from the `Enum` module, will then finally perform those
+operations:
+
+Here's the function from above re-implemented using the `Stream` module:
+
+```elixir
+defmodule SpecialNumbers do
+  def even_fizz_buzz_stream(n) do
+    Stream.iterate(1, fn x -> x + 1 end)
+    |> Stream.filter(fn x -> rem(x, 2) == 0 end)
+    |> Stream.filter(fn x -> rem(x, 3) == 0 end)
+    |> Stream.filter(fn x -> rem(x, 5) == 0 end)
+    |> Enum.take(n)
+  end
+end
+```
+
+First, the finite range of numbers is replaced by `Stream.iterate/2`, which
+produces an endless stream of number, each successor value being calculated by
+the lambda expression based on the initial value.
+
+Second, the `filter/2` function of the `Stream` module is used instead of the
+one from the `Enum` module, turning the eager operation into a lazy one.
+
+This implementation also supports bigger `n` arguments:
+
+    $ iex examples/special_numbers.ex
+    > SpecialNumbers.even_fizz_buzz_stream(3)
+    [30, 60, 90]
+    > SpecialNumbers.even_fizz_buzz_stream(10)
+    [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
