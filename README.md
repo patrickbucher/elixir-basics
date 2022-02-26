@@ -1802,7 +1802,7 @@ operations mentioned can be pipelined:
 
 These principles are applied to create a `Buddies` module, which can be used to
 manage your friends living in different cities. The module shall be used as
-follows:
+follows (`examples/buddies/buddies_v1.exs`):
 
 ```elixir
 buddies =
@@ -1821,7 +1821,7 @@ Buddies.entries(buddies, "Rome")
 3. The entries of a certain city are returned using the `entries/2` query
    function.
 
-The module is implemented as follows:
+The module is implemented as follows (`examples/buddies/buddies_v1.exs`):
 
 ```elixir
 defmodule Buddies do
@@ -1853,3 +1853,49 @@ end
 3. The `entries/2` function returns the list stored under the given city. An
    empty list (`[]`) is given as the third argument to `Map.get/3`, which is
    returned if no elements are stored under `city` in the `buddies` map.
+
+## Composing Abstractions
+
+Storing a list of values under a key can be used in more situations than for
+storing ToDo entries. The details of managing such a map thus can be abstracted
+away by a new module called `MultiDict` (`examples/buddies/multi_dict.ex`):
+
+```elixir
+defmodule MultiDict do
+  def new(), do: %{}
+
+  def add(dict, key, value) do
+    Map.update(dict, key, [value], &[value | &1])
+  end
+
+  def get(dict, key) do
+    Map.get(dict, key, [])
+  end
+end
+```
+
+Notice that in `add/3`, the updater lambda has been re-written using the capture
+operation. The `Buddies` module can now be expressed more simply in terms of
+`MultiDict` (`examples/buddies/buddies_v2.exs`):
+
+```elixir
+defmodule Buddies do
+  def new(), do: MultiDict.new()
+
+  def add_entry(buddies, city, name) do
+    MultiDict.add(buddies, city, name)
+  end
+
+  def entries(buddies, city) do
+    MultiDict.get(buddies, city)
+  end
+end
+```
+
+The `MultiDict` module has to be compiled so that `Buddies` can make use of it:
+
+    $ cd examples/buddies
+    $ elixirc multi_dict.ex
+    $ elixir buddies_v2.exs
+    Matteo
+    Giorgio
