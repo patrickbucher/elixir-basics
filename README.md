@@ -1797,3 +1797,59 @@ operations mentioned can be pipelined:
     $ iex
     > MapSet.new() |> MapSet.put(:mo) |> MapSet.put(:tu) |> MapSet.member?(:mo)
     true
+
+## Basic Abstraction
+
+These principles are applied to create a `Buddies` module, which can be used to
+manage your friends living in different cities. The module shall be used as
+follows:
+
+```elixir
+buddies =
+  Buddies.new()
+  |> Buddies.add_entry("Rome", "Giorgio")
+  |> Buddies.add_entry("Rome", "Matteo")
+  |> Buddies.add_entry("Moscow", "Yuri")
+  |> Buddies.add_entry("Moscow", "Ivan")
+
+Buddies.entries(buddies, "Rome")
+|> Enum.each(&IO.puts/1)
+```
+
+1. A new data object is created using the `new/0` function.
+2. New entries are added using the `add_entry/3` modifier function.
+3. The entries of a certain city are returned using the `entries/2` query
+   function.
+
+The module is implemented as follows:
+
+```elixir
+defmodule Buddies do
+  def new() do
+    %{}
+  end
+
+  def add_entry(buddies, city, name) do
+    Map.update(buddies, city, [name], fn names -> [name | names] end)
+  end
+
+  def entries(buddies, city) do
+    Map.get(buddies, city, [])
+  end
+end
+```
+
+1. The `new/0` function returns an empty map, which is the data structure being
+   used to store the buddies with their city.
+2. The `add_entry/3` function adds a new buddy with a city. `Map.update/4`
+   provides a powerful API for this purpose:
+    - If `city` does not yet exist as a key in the map, the third argument
+      (`[name]`) is used to create the initial value to be stored under that
+      key.
+    - If `city` does exist already as a key in the map, an updater lambda is
+      used to update the value. The existing value is passed as the lambda's
+      sole parameter. The new item is added at the front of the existing
+      entries.
+3. The `entries/2` function returns the list stored under the given city. An
+   empty list (`[]`) is given as the third argument to `Map.get/3`, which is
+   returned if no elements are stored under `city` in the `buddies` map.
