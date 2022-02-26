@@ -1753,3 +1753,47 @@ This implementation also supports bigger `n` arguments:
     [30, 60, 90]
     > SpecialNumbers.even_fizz_buzz_stream(10)
     [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
+
+# Abstraction
+
+In object-oriented languages, methods are called on instances of classes:
+
+```java
+Employee dilbert = new Employee();
+dilbert.setSalary(120000);
+```
+
+In Elixir, the functions of a module are used to work on its data type:
+
+```elixir
+dilbert = Employee.new()
+dilbert = Employee.set_salary(dilbert, 120000)
+```
+
+_Modifier functions_ take a data object as the first parameter and return a new
+data object with the modification applied:
+
+```elixir
+new_list = List.insert_at(old_list, -1, :hello)
+```
+
+_Query functions_ also take a data object as the first (and often: sole)
+parameter and return some information about the given data object:
+
+```elixir
+name_length = String.length(name)
+```
+
+By convention, many modules provides a `new` function, which creates a data
+object of the type the respective module deals with.
+
+```elixir
+days = MapSet.new()
+```
+
+Due to the convention that the module's data object is the first parameter, the
+operations mentioned can be pipelined:
+
+    $ iex
+    > MapSet.new() |> MapSet.put(:mo) |> MapSet.put(:tu) |> MapSet.member?(:mo)
+    true
