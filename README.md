@@ -2016,3 +2016,93 @@ However, structs do not implement the enumerable protocol, so functions of the
 [Records](https://hexdocs.pm/elixir/Record.html) are similar to structs, but
 based on tuples instead of maps. They are used for interoperability with Erlang
 libraries that work with records themselves.
+
+## CRUD Operations
+
+The above `Buddies` module supports creating new and reading existing entries.
+In order to implement an update and a delete operation, the entries must be
+identified using a unique value (`examples/buddies/buddies_v5.exs`):
+
+```elixir
+defmodule Buddies do
+  defstruct auto_id: 1, entries: %{}
+
+  def new(), do: %Buddies{}
+
+  def add_entry(buddies, entry) do
+    entry = Map.put(entry, :id, buddies.auto_id)
+    new_entries = Map.put(buddies.entries, buddies.auto_id, entry)
+    %Buddies{buddies | entries: new_entries, auto_id: buddies.auto_id + 1}
+  end
+
+  def entries(buddies, city) do
+    buddies.entries
+    |> Stream.filter(fn {_, entry} -> entry.city == city end)
+    |> Enum.map(fn {_, entry} -> entry end)
+  end
+
+  def update_entry(buddies, entry_id, updater_fun) do
+    case Map.fetch(buddies.entries, entry_id) do
+      :error ->
+        buddies
+
+      {:ok, old_entry} ->
+        new_entry = %{id: ^entry_id} = updater_fun.(old_entry)
+        new_entries = Map.put(buddies.entries, entry_id, new_entry)
+        %Buddies{buddies | entries: new_entries}
+    end
+  end
+
+  def delete_entry(buddies, entry_id) do
+    new_entries = Map.filter(buddies.entries, fn {_, e} -> e.id != entry_id end)
+    %Buddies{buddies | entries: new_entries}
+  end
+end
+```
+
+Notice the following changes and additions:
+
+1. Instead of re-using the `MultiDict` module, `Buddies` defines its own struct
+   consisting of `auto_id` (the identifier for the next new entry) and `entries`
+   (the actual entries, which used to be contained in the `MultiDict` in earlier
+   versions).
+2. The `add_entry/2` function now puts the computed `auto_id` as the `:id`
+   attribute into the entry to be added. A new struct is returned with the
+   entries now containing the new entry, and the `auto_id` being incremented.
+3. The `entries/2` function filters the entry by the given city and then
+   extracts the entry from the key/value pair. (The `id` is only used
+   internally.)
+4. The `update_entry/3` function looks up an entry with the given `entry_id`.
+    - If the lookup fails (`:error`), the old struct is returned.
+    - The the lookup succeeds, the `old_entry` is updated using a provided
+      updater lambda function. To make sure that this lambda does not alter the
+      `id` of the entry, it is matched against `%{id: ^entry_id}` with the given
+      `entry_id` being pinned. The updated entry is stored in the in
+      `buddies.entries`, which is then used to replace the old `entries`.
+5. The `delete_entry/2` function filters out the entry with the given `entry_id`
+   and returns the entries not containing the one with the given id.
+
+The client code looks as follows:
+
+```elixir
+buddies =
+  Buddies.new()
+  |> Buddies.add_entry(%{city: "Palermo", name: "Vito"})
+  |> Buddies.add_entry(%{city: "Bern", name: "Urs"})
+
+Enum.each(buddies.entries, &IO.inspect/1)
+
+buddies =
+  buddies
+  |> Buddies.delete_entry(2)
+  |> Buddies.update_entry(1, fn e -> Map.put(e, :name, "Don Corleone") end)
+
+Enum.each(buddies.entries, &IO.inspect/1)
+```
+
+Notice the lambda replacing the `:name` of the entry with the identifier `1`.
+The output then looks as follows:
+
+    {1, %{city: "Palermo", id: 1, name: "Vito"}}
+    {2, %{city: "Bern", id: 2, name: "Urs"}}
+    {1, %{city: "Palermo", id: 1, name: "Don Corleone"}}
