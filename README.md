@@ -2012,3 +2012,7 @@ However, structs do not implement the enumerable protocol, so functions of the
 
     > Enum.member?(entry, :city)
     ** (Protocol.UndefinedError) protocol Enumerable not implemented for %Buddies.Entry{[…]
+
+[Records](https://hexdocs.pm/elixir/Record.html) are similar to structs, but
+based on tuples instead of maps. They are used for interoperability with Erlang
+libraries that work with records themselves.
