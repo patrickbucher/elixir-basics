@@ -2106,3 +2106,74 @@ The output then looks as follows:
     {1, %{city: "Palermo", id: 1, name: "Vito"}}
     {2, %{city: "Bern", id: 2, name: "Urs"}}
     {1, %{city: "Palermo", id: 1, name: "Don Corleone"}}
+
+## Protocols
+
+Consider the module `Person` (`examples/person.ex`):
+
+```elixir
+defmodule Person do
+  defstruct name: "" , age: 0
+  def new(name, age) do
+    %Person{name: name, age: age}
+  end
+end
+```
+
+Since the data is stored in a map, it's possible to print a `Person` using
+`IO.inspect/1`, but `IO.puts/1` fails:
+
+    $ iex examples/person.ex
+    > dilbert = Person.new("Dilbert", 42)
+    > IO.inspect(dilbert)
+    %Person{age: 42, name: "Dilbert"}
+    > IO.puts(dilbert)
+    ** (Protocol.UndefinedError) protocol String.Chars not implemented for %Person{age: 42, […]
+
+The `Person` module does not implement the `String.Chars` _protocol_, which is
+defined as follows:
+
+```elixir
+defprotocol String.Chars do
+    def to_string(thing)
+end
+```
+
+Notice the `def` macro that does not define a function body, but only the
+function header (name and arity).
+
+A protocol can be implemented using the `defimpl` macro:
+
+```elixir
+defimpl String.Chars, for: Person do
+  def to_string(thing) do
+    "#{thing.name} (age: #{thing.age})"
+  end
+end
+```
+
+Which makes it possible to use `IO.puts/1` on `Person` now:
+
+    > dilbert = Person.new("Dilbert", 42)
+    > IO.inspect(dilbert)
+    %Person{age: 42, name: "Dilbert"}
+    > IO.puts(dilbert)
+    Dilbert (age: 42)
+
+`IO.puts/1` is not aware of the different types and how they are supposed to be
+printed, it just delegates the function call to `String.Chars.to_string/1`,
+which dispatches the call to the type implementing the protocol.
+
+It's possible to define protocol implementations for any type; including for the
+`Any` fallback in order to provide a default implementation.
+
+Consider implementing the following protocols for your types:
+
+- `String.Chars` to provide a string representation for output (e.g. with
+  `IO.puts/1`).
+- `Inspect` to provide a detailed string representation for your type (for
+  `IO.inspect/1`).
+- `Enumerable` so that your type works with the functions of `Enum` and
+  `Stream`.
+- `Collectable` so that you can collect data into your type using
+  comprehensions.
