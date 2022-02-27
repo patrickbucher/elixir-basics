@@ -15,21 +15,34 @@ defmodule Buddies do
     |> Enum.map(fn {_, entry} -> entry end)
   end
 
-  defmodule Entry do
-    defstruct city: nil, name: nil
+  def update_entry(buddies, entry_id, updater_fun) do
+    case Map.fetch(buddies.entries, entry_id) do
+      :error ->
+        buddies
 
-    def new(city, name) do
-      %Entry{city: city, name: name}
+      {:ok, old_entry} ->
+        new_entry = %{id: ^entry_id} = updater_fun.(old_entry)
+        new_entries = Map.put(buddies.entries, entry_id, new_entry)
+        %Buddies{buddies | entries: new_entries}
     end
+  end
+
+  def delete_entry(buddies, entry_id) do
+    new_entries = Map.filter(buddies.entries, fn {_, e} -> e.id != entry_id end)
+    %Buddies{buddies | entries: new_entries}
   end
 end
 
 buddies =
   Buddies.new()
-  |> Buddies.add_entry(Buddies.Entry.new("Rome", "Giorgio"))
-  |> Buddies.add_entry(Buddies.Entry.new("Rome", "Matteo"))
-  |> Buddies.add_entry(Buddies.Entry.new("Moscow", "Yuri"))
-  |> Buddies.add_entry(Buddies.Entry.new("Moscow", "Ivan"))
+  |> Buddies.add_entry(%{city: "Palermo", name: "Vito"})
+  |> Buddies.add_entry(%{city: "Bern", name: "Urs"})
 
-Buddies.entries(buddies, "Rome")
-|> Enum.each(&IO.inspect/1)
+Enum.each(buddies.entries, &IO.inspect/1)
+
+buddies =
+  buddies
+  |> Buddies.delete_entry(2)
+  |> Buddies.update_entry(1, fn e -> Map.put(e, :name, "Don Corleone") end)
+
+Enum.each(buddies.entries, &IO.inspect/1)

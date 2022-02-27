@@ -15,20 +15,35 @@ defmodule TodoList do
     |> Enum.map(fn {_, entry} -> entry end)
   end
 
-  defmodule Entry do
-    defstruct date: nil, title: nil
+  def update_entry(todo_list, entry_id, updater_fun) do
+    case Map.fetch(todo_list.entries, entry_id) do
+      :error ->
+        todo_list
 
-    def new(date, title) do
-      %Entry{date: date, title: title}
+      {:ok, old_entry} ->
+        new_entry = %{id: ^entry_id} = updater_fun.(old_entry)
+        new_entries = Map.put(todo_list.entries, entry_id, new_entry)
+        %TodoList{todo_list | entries: new_entries}
     end
+  end
+
+  def delete_entry(todo_list, entry_id) do
+    new_entries = Map.filter(todo_list.entries, fn {_, e} -> e.id != entry_id end)
+    %TodoList{todo_list | entries: new_entries}
   end
 end
 
 todo_list =
   TodoList.new()
-  |> TodoList.add_entry(TodoList.Entry.new(~D[2022-02-26], "Study Elixir"))
-  |> TodoList.add_entry(TodoList.Entry.new(~D[2022-02-26], "Cleaning Up"))
-  |> TodoList.add_entry(TodoList.Entry.new(~D[2022-02-27], "Update Software"))
+  |> TodoList.add_entry(%{date: ~D[2022-02-26], title: "Study Elixir"})
+  |> TodoList.add_entry(%{date: ~D[2022-02-26], title: "Cleaning Up"})
+  |> TodoList.add_entry(%{date: ~D[2022-02-27], title: "Update Software"})
 
-TodoList.entries(todo_list, ~D[2022-02-26])
-|> Enum.each(&IO.inspect/1)
+Enum.each(todo_list.entries, &IO.inspect/1)
+
+todo_list =
+  todo_list
+  |> TodoList.delete_entry(2)
+  |> TodoList.update_entry(3, fn e -> Map.put(e, :title, "Relaxing") end)
+
+Enum.each(todo_list.entries, &IO.inspect/1)
