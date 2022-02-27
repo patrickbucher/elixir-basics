@@ -1934,3 +1934,81 @@ buddies =
 Buddies.entries(buddies, "Rome")
 |> Enum.each(&IO.inspect/1)
 ```
+
+## Abstracting with Structs
+
+A struct is a special kind of map that defines which fields can be stored in it.
+A module can have at most one struct, and a struct belongs to one module. For
+die `Buddies` module, a sub-module called `Entry` is defined, which contains the
+struct definition and the function `new/2` to create a new one
+(`examples/buddies/buddies_v4.exs`):
+
+```elixir
+defmodule Buddies do
+  def new(), do: MultiDict.new()
+
+  def add_entry(buddies, entry) do
+    MultiDict.add(buddies, entry.city, entry)
+  end
+
+  def entries(buddies, city) do
+    MultiDict.get(buddies, city)
+  end
+
+  defmodule Entry do
+    defstruct city: nil, name: nil
+
+    def new(city, name) do
+      %Entry{city: city, name: name}
+    end
+  end
+end
+```
+
+The client code not necessarily becomes shorter, but safer:
+
+```elixir
+buddies =
+  Buddies.new()
+  |> Buddies.add_entry(Buddies.Entry.new("Rome", "Giorgio"))
+  |> Buddies.add_entry(Buddies.Entry.new("Rome", "Matteo"))
+  |> Buddies.add_entry(Buddies.Entry.new("Moscow", "Yuri"))
+  |> Buddies.add_entry(Buddies.Entry.new("Moscow", "Ivan"))
+
+Buddies.entries(buddies, "Rome")
+|> Enum.each(&IO.inspect/1)
+```
+
+A struct can be matched by a map:
+
+    $ iex examples/buddies/buddies_v4.exs
+    > entry = Buddies.Entry.new("Bern", "Urs")
+    > %{city: city, name: name} = entry
+    > city
+    "Bern"
+    > name
+    "Urs"
+
+However, a map cannot be matched by a struct:
+
+    > %Buddies.Entry{city: city, name: name} = %{city: "Bern", name: "Urs"}
+    ** (MatchError) no match of right hand side value: %{city: "Bern", name: "Urs"}
+
+This is because a struct has an additional field called `__struct__` indicating
+the type:
+
+    > Map.to_list(entry)
+    [__struct__: Buddies.Entry, city: "Bern", name: "Urs"]
+
+Existing fields of a struct can be updated with the same syntax as for a map:
+
+    > entry = Buddies.Entry.new("Bern", "Urs")
+    > entry = %Buddies.Entry{entry | city: "Biel"}
+    %Buddies.Entry{city: "Biel", name: "Urs"}
+
+Since structs _are_ maps, functions of the `Map` module can be used on structs.
+However, structs do not implement the enumerable protocol, so functions of the
+`Enum` module cannot be used on them:
+
+    > Enum.member?(entry, :city)
+    ** (Protocol.UndefinedError) protocol Enumerable not implemented for %Buddies.Entry{[…]
