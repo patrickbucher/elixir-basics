@@ -1899,3 +1899,38 @@ The `MultiDict` module has to be compiled so that `Buddies` can make use of it:
     $ elixir buddies_v2.exs
     Matteo
     Giorgio
+
+## Structuring Data with Maps
+
+The current implementation is tedious to extend: In case an additional field
+should be stored, multiple functions needed to extended. It's therefore more
+flexible to store the data in a map (`examples/buddies/buddies_v3.exs`):
+
+```elixir
+defmodule Buddies do
+  def new(), do: MultiDict.new()
+
+  def add_entry(buddies, entry) do
+    MultiDict.add(buddies, entry.city, entry)
+  end
+
+  def entries(buddies, city) do
+    MultiDict.get(buddies, city)
+  end
+end
+```
+
+The `MultiDict` module works without any modification. The client code, however,
+becomes more verbose, because a map with keys needs to be provided:
+
+```elixir
+buddies =
+  Buddies.new()
+  |> Buddies.add_entry(%{city: "Rome", name: "Giorgio"})
+  |> Buddies.add_entry(%{city: "Rome", name: "Matteo"})
+  |> Buddies.add_entry(%{city: "Moscow", name: "Yuri"})
+  |> Buddies.add_entry(%{city: "Moscow", name: "Ivan"})
+
+Buddies.entries(buddies, "Rome")
+|> Enum.each(&IO.inspect/1)
+```
