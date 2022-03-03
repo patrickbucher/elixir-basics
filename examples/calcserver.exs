@@ -1,44 +1,60 @@
-defmodule CalcServer do
+defmodule Calculator do
   def start() do
-    spawn(&loop/0)
+    spawn(fn -> loop(0) end)
   end
 
-  def calc(pid, task, res_pid) do
-    {op, a, b} = task
-    send(pid, {op, res_pid, a, b})
+  def add(pid, x) do
+    send(pid, {:add, x})
   end
 
-  defp loop() do
+  def sub(pid, x) do
+    send(pid, {:sub, x})
+  end
+
+  def mul(pid, x) do
+    send(pid, {:mul, x})
+  end
+
+  def div(pid, x) do
+    send(pid, {:div, x})
+  end
+
+  def value(pid) do
+    send(pid, {:val, self()})
+
     receive do
-      {:add, pid, a, b} -> send(pid, {:result, a + b})
-      {:sub, pid, a, b} -> send(pid, {:result, a - b})
+      {:ok, value} -> value
     end
+  end
 
-    loop()
+  defp loop(value) do
+    new_value =
+      receive do
+        {:add, x} ->
+          value + x
+
+        {:sub, x} ->
+          value - x
+
+        {:mul, x} ->
+          value * x
+
+        {:div, x} ->
+          value / x
+
+        {:val, pid} ->
+          send(pid, {:ok, value})
+          value
+      end
+
+    loop(new_value)
   end
 end
 
-defmodule PrintServer do
-  def start() do
-    spawn(&loop/0)
-  end
-
-  defp loop() do
-    receive do
-      {:result, x} -> IO.puts(x)
-    end
-
-    loop()
-  end
-end
-
-calculator = CalcServer.start()
-printer = PrintServer.start()
-
-calculations =
-  [{:add, 17, 5}, {:add, -5, 8}, {:sub, 21, 3}, {:sub, 35, 50}]
-  |> Enum.each(fn calculation ->
-    CalcServer.calc(calculator, calculation, printer)
-  end)
-
-Process.sleep(2000)
+calculator_pid = Calculator.start()
+IO.puts("initial value: #{Calculator.value(calculator_pid)}")
+Calculator.add(calculator_pid, 10)
+Calculator.sub(calculator_pid, 5)
+Calculator.mul(calculator_pid, 3)
+Calculator.div(calculator_pid, 5)
+IO.puts("final value: #{Calculator.value(calculator_pid)}")
