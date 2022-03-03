@@ -23,23 +23,26 @@ defmodule BankAccount do
   end
 
   defp loop(balance) do
-    receive do
-      {:query, pid} ->
-        send(pid, {:ok, balance})
-        loop(balance)
+    balance =
+      receive do
+        {:query, pid} ->
+          send(pid, {:ok, balance})
+          balance
 
-      {:pay_in, amount, _} ->
-        loop(balance + amount)
+        {:pay_in, amount, _} ->
+          balance + amount
 
-      {:pay_out, amount, _} ->
-        new_balance = balance - amount
+        {:pay_out, amount, _} ->
+          new_balance = balance - amount
 
-        if new_balance >= 0 do
-          loop(new_balance)
-        else
-          loop(balance)
-        end
-    end
+          if new_balance >= 0 do
+            new_balance
+          else
+            balance
+          end
+      end
+
+    loop(balance)
   end
 end
 
