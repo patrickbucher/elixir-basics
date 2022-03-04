@@ -53,7 +53,7 @@ accounts = %{
 }
 
 # random spending 1..1000
-1..50
+1..10
 |> Enum.each(fn _ ->
   {name, account} = Enum.random(accounts)
   amount = :rand.uniform(1000)

@@ -2177,3 +2177,298 @@ Consider implementing the following protocols for your types:
   `Stream`.
 - `Collectable` so that you can collect data into your type using
   comprehensions.
+
+# Concurrency Primitives
+
+A _process_ is a lightweight unit of execution in the Erlang virtual machine, as
+opposed to the heavy process of the operating system. Every process has its own
+identifier (the PID), which is assigned upon starting it using the `spawn/1`
+function. A process also has a mailbox, queueing up a (theoretically) unlimited
+amount of messages. If the PID of a process is known, a message can be sent to
+it using the `send/2` function. The messages are processed using `receive`.
+
+## Stateless Server Process
+
+This small echo server demonstrates those principles
+(`examples/echoserver.exs`):
+
+```elixir
+defmodule Echo do
+  def loop() do
+    receive do
+      {:message, payload} -> IO.puts(payload)
+      {:important_message, payload} -> IO.puts(String.upcase(payload))
+      unknown -> IO.puts(:stderr, "unsupported message format")
+    end
+
+    loop()
+  end
+end
+
+printer = spawn(&Echo.loop/0)
+
+send(printer, {:message, "Hello"})
+send(printer, {:message, "World"})
+send(printer, {:important_message, "and beyond"})
+send(printer, {:unknown, "Universe"})
+send(printer, {:message, "Goodbye"})
+
+Process.sleep(1000)
+```
+
+- The `Echo` module defines a single function `loop/0`, which handles the
+  incoming messages. The `receive` construct matches the incoming message
+  against different patterns and deals with them accordingly. The catch-all
+  pattern (`unknown`) ensures that no messages are queueing up ad infinitum.
+  Since `receive` only awaits a single message, the `loop/0` function calls
+  itself, so that the next message can be dealt with.
+- A process is created using the `spawn` function by indicating the
+  `Echo.loop/0` function; a PID is returned and saved in `printer`.
+- Various messages are sent to the `printer` by handing over its PID and a
+  message. Since the Echo server runs asynchronuously, the `Process.sleep/1`
+  call makes sure that the `Echo` process has enough time to finish its work.
+
+    $ elixir examples/echoserver.exs
+    Hello
+    World
+    AND BEYOND
+    Goodbye
+    unsupported message format
+
+## Stateful Server Process (Simple State)
+
+A server process can handle state by passing it to subsequent calls of its
+`loop` function. An initial state can be provided by calling `loop` with an
+argument; modified state is provided by further recursive calls to `loop`.
+Consider this `BankAccount` module (`examples/paymentserver.exs`):
+
+```elixir
+defmodule BankAccount do
+  def pay_async(pid, payment) do
+    case payment do
+      {:incoming, amount} -> send(pid, {:pay_in, amount, self()})
+      {:outgoing, amount} -> send(pid, {:pay_out, amount, self()})
+    end
+  end
+
+  def query_balance(pid) do
+    send(pid, {:query, self()})
+  end
+
+  def get_result() do
+    receive do
+      {:ok, balance} -> {:ok, balance}
+    after
+      1000 -> {:err, :timeout}
+    end
+  end
+
+  def start(balance) do
+    spawn(fn -> loop(balance) end)
+  end
+
+  defp loop(balance) do
+    balance =
+      receive do
+        {:query, pid} ->
+          send(pid, {:ok, balance})
+          balance
+
+        {:pay_in, amount, _} ->
+          balance + amount
+
+        {:pay_out, amount, _} ->
+          new_balance = balance - amount
+
+          if new_balance >= 0 do
+            new_balance
+          else
+            balance
+          end
+      end
+
+    loop(balance)
+  end
+end
+```
+
+- The `pay_async/2` function expects a `pid` and a `payment` message. This 
+  message is forwarded to itself, changing the atom (`:incoming` to `:pay_in`,
+  `:outgoing` to `:pay_out`) and enriching the message with the PID of the main
+  process, which is gotten hold of by a call to `self/0`. (The response is
+  supposed to be sent back to that particular PID later on.)
+- The `query_balance/1` function also expects a `pid`, to which it sends a
+  `:query` message, also providing its PID for getting the response.
+- The `get_result/0` function awaits the incoming answer to the balance query.
+  If it is not answered within 1000 milliseconds (`after` clause), a `:timeout`
+  error is returned.
+- The `start/1` function is used to `spawn` the new process. The given initial
+  state (`balance`) is provided by a lambda.
+- The `loop/1` function handles the incoming messages. Since `receive` is an
+  expression, the (poentially) modified `balance` stores its returned value. The
+  first clause catches `:query` results, which are sent back to the caller PID.
+  The current balance is returned unmodified. The second clause catches incoming
+  payments (`:pay_in`), which are added to the balance. The third clause
+  (`:pay_out`) first checks the current balance, and only reduces it by the
+  given `amount` if the new balane would not be lower than zero. The `loop` is
+  called again with the (potentially) updated `balance`.
+
+In this example, multiple processes are created, which run independently of each
+other:
+
+```elixir
+accounts = %{
+  "Dilbert" => BankAccount.start(25_200),
+  "Alice" => BankAccount.start(52_900),
+  "Wally" => BankAccount.start(12_500)
+}
+
+# random spending 1..1000
+1..10
+|> Enum.each(fn _ ->
+  {name, account} = Enum.random(accounts)
+  amount = :rand.uniform(1000)
+  BankAccount.pay_async(account, {:outgoing, amount})
+  IO.puts("#{name} spent #{amount}.")
+end)
+
+# random salary 7000..9000
+accounts
+|> Enum.each(fn {name, account} ->
+  salary = :rand.uniform(2000) + 7000
+  BankAccount.pay_async(account, {:incoming, salary})
+  IO.puts("#{name} received a salary of #{salary}.")
+end)
+
+accounts
+|> Enum.each(fn {name, account} ->
+  BankAccount.query_balance(account)
+
+  case BankAccount.get_result() do
+    {:ok, balance} ->
+      IO.puts("At the end of the month, #{name} has a balance of #{balance}.")
+
+    {:err, :timeout} ->
+      IO.puts("Retrieval of balance of #{name}'s account failed with a timeout.")
+  end
+end)
+```
+
+Which produces the following output:
+
+    Alice spent 230.
+    Alice spent 538.
+    Alice spent 463.
+    Alice spent 491.
+    Wally spent 748.
+    Alice spent 112.
+    Alice spent 883.
+    Alice spent 712.
+    Alice spent 365.
+    Wally spent 220.
+    Alice received a salary of 8512.
+    Dilbert received a salary of 7684.
+    Wally received a salary of 8518.
+    At the end of the month, Alice has a balance of 57618.
+    At the end of the month, Dilbert has a balance of 32884.
+    At the end of the month, Wally has a balance of 20050.
+
+## Stateful Server Process (Nested State)
+
+The state of a server process is not restricted to simple atomic variables such
+as numbers. An existing module, such as the `Buddies` module
+(`examples/buddies/buddies_v5.exs`), can be used as the foundation for such a
+server (`examples/buddies/buddies_v6.exs`):
+
+```elixir
+defmodule BuddyServer do
+  def start() do
+    spawn(fn -> loop(Buddies.new()) end)
+  end
+
+  def add_entry(entry) do
+    send(:buddy_server, {:add, entry})
+  end
+
+  def update_entry(entry_id, updater_fun) do
+    send(:buddy_server, {:upd, entry_id, updater_fun})
+  end
+
+  def delete_entry(entry_id) do
+    send(:buddy_server, {:del, entry_id})
+  end
+
+  def entries(city) do
+    send(:buddy_server, {:entries, city, self()})
+
+    receive do
+      {:ok, entries} -> entries
+    end
+  end
+
+  defp loop(buddies) do
+    new_buddies =
+      receive do
+        {:add, entry} ->
+          Buddies.add_entry(buddies, entry)
+
+        {:upd, entry_id, updater_fun} ->
+          Buddies.update_entry(buddies, entry_id, updater_fun)
+
+        {:del, entry_id} ->
+          Buddies.delete_entry(buddies, entry_id)
+
+        {:entries, city, pid} ->
+          send(pid, {:ok, Buddies.entries(buddies, city)})
+          buddies
+      end
+
+    loop(new_buddies)
+  end
+end
+```
+
+The struct defined in the `Buddies` module is passed around in between loops.
+The messages (`:add`, `:upd`, `:del`, and `:entries`) are forwarded asl calls to the
+underlying `Buddies` module (`add_entry/2`, `update_entry/3`, `delete_entry/2`,
+and `entries/2`, respectively).
+
+Notice that the server sends its messages to an atom `:buddy_server` instead of
+to a specific PID. This is because the server process is registered under that
+atom before:
+
+```elixir
+pid = BuddyServer.start()
+Process.register(pid, :buddy_server)
+```
+
+The server is then used as follows:
+
+```elixir
+IO.puts("adding some buddies")
+BuddyServer.add_entry(%{city: "Berlin", name: "Hans"})
+BuddyServer.add_entry(%{city: "Berlin", name: "Hermann"})
+BuddyServer.add_entry(%{city: "Palermo", name: "Vito"})
+
+IO.puts("entries from Berlin")
+Enum.each(BuddyServer.entries("Berlin"), &IO.inspect/1)
+
+IO.puts("entries from Berlin after deleting entry with id 2")
+BuddyServer.delete_entry(2)
+Enum.each(BuddyServer.entries("Berlin"), &IO.inspect/1)
+
+IO.puts("entries from Palermo after updating entry with id 3")
+BuddyServer.update_entry(3, fn e -> Map.put(e, :name, "Don Corleone") end)
+Enum.each(BuddyServer.entries("Palermo"), &IO.inspect/1)
+```
+
+Which produces this output:
+
+    adding some buddies
+    entries from Berlin
+    %{city: "Berlin", id: 1, name: "Hans"}
+    %{city: "Berlin", id: 2, name: "Hermann"}
+    entries from Berlin after deleting entry with id 2
+    %{city: "Berlin", id: 1, name: "Hans"}
+    entries from Palermo after updating entry with id 3
+    %{city: "Palermo", id: 3, name: "Don Corleone"}
