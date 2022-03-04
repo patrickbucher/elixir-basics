@@ -38,20 +38,20 @@ defmodule TodoServer do
     spawn(fn -> loop(TodoList.new()) end)
   end
 
-  def add_entry(pid, entry) do
-    send(pid, {:add, entry})
+  def add_entry(entry) do
+    send(:todo_server, {:add, entry})
   end
 
-  def update_entry(pid, entry_id, updater_fun) do
-    send(pid, {:upd, entry_id, updater_fun})
+  def update_entry(entry_id, updater_fun) do
+    send(:todo_server, {:upd, entry_id, updater_fun})
   end
 
-  def delete_entry(pid, entry_id) do
-    send(pid, {:del, entry_id})
+  def delete_entry(entry_id) do
+    send(:todo_server, {:del, entry_id})
   end
 
-  def entries(pid, date) do
-    send(pid, {:entries, date, self()})
+  def entries(date) do
+    send(:todo_server, {:entries, date, self()})
 
     receive do
       {:ok, entries} -> entries
@@ -80,19 +80,20 @@ defmodule TodoServer do
 end
 
 pid = TodoServer.start()
+Process.register(pid, :todo_server)
 
 IO.puts("adding some entries")
-TodoServer.add_entry(pid, %{date: ~D[2022-02-26], title: "Study Elixir"})
-TodoServer.add_entry(pid, %{date: ~D[2022-02-26], title: "Cleaning Up"})
-TodoServer.add_entry(pid, %{date: ~D[2022-02-27], title: "Update Software"})
+TodoServer.add_entry(%{date: ~D[2022-02-26], title: "Study Elixir"})
+TodoServer.add_entry(%{date: ~D[2022-02-26], title: "Cleaning Up"})
+TodoServer.add_entry(%{date: ~D[2022-02-27], title: "Update Software"})
 
 IO.puts("entries from 2022-02-26")
-Enum.each(TodoServer.entries(pid, ~D[2022-02-26]), &IO.inspect/1)
+Enum.each(TodoServer.entries(~D[2022-02-26]), &IO.inspect/1)
 
 IO.puts("entries from 2022-02-26 after deleting entry with id 2")
-TodoServer.delete_entry(pid, 2)
-Enum.each(TodoServer.entries(pid, ~D[2022-02-26]), &IO.inspect/1)
+TodoServer.delete_entry(2)
+Enum.each(TodoServer.entries(~D[2022-02-26]), &IO.inspect/1)
 
 IO.puts("entries from 2022-02-27 after updating entry with id 3")
-TodoServer.update_entry(pid, 3, fn e -> Map.put(e, :title, "Relaxing") end)
-Enum.each(TodoServer.entries(pid, ~D[2022-02-27]), &IO.inspect/1)
+TodoServer.update_entry(3, fn e -> Map.put(e, :title, "Relaxing") end)
+Enum.each(TodoServer.entries(~D[2022-02-27]), &IO.inspect/1)
