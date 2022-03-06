@@ -2734,3 +2734,63 @@ The new implementation now can be used as follows:
 
 It's now up to the interface functions to decide to operate synchronously or
 asynchronously.
+
+## `GenServer`
+
+There's no need to implement a generic server process manually. It is already
+available through the `GenServer` module (based on Erlang's `:gen_server`).
+`GenServer` is a [behaviour](https://hexdocs.pm/elixir/Module.html#module-behaviour),
+which requires the implementation of various functions, such as `handle_call/3`,
+`handle_cast/2`, and `init/1`. There's no need to implement all of them, since
+default implementations can be taken from `GenServer` with the `use` macro as
+follows (`examples/key_value_gen_server.exs`):
+
+```elixir
+defmodule KeyValueStore do
+  use GenServer
+
+  def start do
+    GenServer.start(KeyValueStore, nil)
+  end
+
+  def put(pid, key, value) do
+    GenServer.cast(pid, {:put, key, value})
+  end
+
+  def get(pid, key) do
+    GenServer.call(pid, {:get, key})
+  end
+
+  def init(_) do
+    {:ok, %{}}
+  end
+
+  def handle_cast({:put, key, value}, state) do
+    {:noreply, Map.put(state, key, value)}
+  end
+
+  def handle_call({:get, key}, _, state) do
+    {:reply, Map.get(state, key), state}
+  end
+end
+
+{:ok, pid} = KeyValueStore.start()
+KeyValueStore.put(pid, :name, "Dilbert")
+name = KeyValueStore.get(pid, :name)
+IO.puts(name)
+```
+
+- The `start/0` function delegates the startup to `GenServer` by providing the
+  module referenec. No second parameter is needed, but would be handed over to
+  `init/1`, if provided.
+- The `put/3` and `get/2` functions are interface functions that delegate their
+  calls to `GenServer` using `cast` (asynchronous) or `call` (synchronous).
+- The `handle_cast/2` function is the callback for asynchronous calls, and, by
+  convention, returns a tuple starting with `:noreply`.
+- The `handle_call/3` function is the callback for synchronous calls. Its second
+  parameter is an internal request ID, which can be ignored here. It's returned
+  tuple starts with the `:reply` atom by convention.
+
+Notice that `GenServer.start/2` retrurns a tuple, indicating whether or not the
+process started successfylly. After creation, the module can be used through its
+interface function; its use of `GenServer` is completely transparent.
