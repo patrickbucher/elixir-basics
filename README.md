@@ -2225,8 +2225,8 @@ Process.sleep(1000)
 - A process is created using the `spawn` function by indicating the
   `Echo.loop/0` function; a PID is returned and saved in `printer`.
 - Various messages are sent to the `printer` by handing over its PID and a
-  message. Since the Echo server runs asynchronuously, the `Process.sleep/1`
-  call makes sure that the `Echo` process has enough time to finish its work.
+  message. Since the Echo server runs asynchronously, the `Process.sleep/1` call
+  makes sure that the `Echo` process has enough time to finish its work.
 
     $ elixir examples/echoserver.exs
     Hello
@@ -2616,3 +2616,115 @@ Which can be used as follows:
 
 Notice that the _interface functions_ run in the client process, whereas the
 _handler functions_ run in the server process.
+
+## Asynchronous Requests
+
+The `get` operation needs to be synchronous, since the client wants the response
+right away. The `put` operation, on the other side, could be made asynchronous,
+working in a _fire and forget_ manner. In Erlang/OTP, those kinds of requests
+are called _call_ (synchronous) and _cast_ (asynchronous).
+
+The server process needs to be updated in order to support both call and cast
+requests (`examples/server_process/v3/server_process.ex`):
+
+```elixir
+defmodule ServerProcess do
+  def start(callback_module) do
+    spawn(fn ->
+      initial_state = callback_module.init()
+      loop(callback_module, initial_state)
+    end)
+  end
+
+  def call(server_pid, request) do
+    send(server_pid, {:call, request, self()})
+
+    receive do
+      {:response, response} -> response
+    end
+  end
+
+  def cast(server_pid, request) do
+    send(server_pid, {:cast, request})
+  end
+
+  defp loop(callback_module, current_state) do
+    receive do
+      {:call, request, caller} ->
+        {response, new_state} =
+          callback_module.handle_call(
+            request,
+            current_state
+          )
+
+        send(caller, {:response, response})
+        loop(callback_module, new_state)
+
+      {:cast, request} ->
+        new_state =
+          callback_module.handle_cast(
+            request,
+            current_state
+          )
+
+        loop(callback_module, new_state)
+    end
+  end
+end
+```
+
+- The message sent by the `call/2` function now includes the `:call` atom to
+  indicate the messaging mode. In the message loop, the `:call` atom is used for
+  matching those messages.
+- A new function `cast/2` is introduced, which sends messages prefixed with the
+  `:cast` atom to the server process. Those messages are handled in the event
+  loop in a way that only the state is updated, but no message is sent back to
+  the caller.
+
+The `KeyValueStore` module must be updated accordingly in order to support
+`cast` operations (`examples/server_process/v3/key_value_store.ex`):
+
+```elixir
+defmodule KeyValueStore do
+  def start do
+    ServerProcess.start(KeyValueStore)
+  end
+
+  def put(pid, key, value) do
+    ServerProcess.cast(pid, {:put, key, value})
+  end
+
+  def get(pid, key) do
+    ServerProcess.call(pid, {:get, key})
+  end
+
+  def init do
+    %{}
+  end
+
+  def handle_cast({:put, key, value}, state) do
+    Map.put(state, key, value)
+  end
+
+  def handle_call({:get, key}, state) do
+    {Map.get(state, key), state}
+  end
+end
+```
+
+- The `put/3` function now calls `ServerProcess.cast/2`.
+- The first clause of the `handle_call/2` function has been replaced with a new
+  `handle_cast/2` function.
+
+The new implementation now can be used as follows:
+
+    $ cd examples/server_process/v3
+    $ elixirc key_value_store.ex server_process.ex
+    $ iex
+    > pid = KeyValueStore.start()
+    > KeyValueStore.put(pid, :name, "Dogbert")
+    > KeyValueStore.get(pid, :name)
+    "Dogbert"
+
+It's now up to the interface functions to decide to operate synchronously or
+asynchronously.
