@@ -2794,3 +2794,6 @@ IO.puts(name)
 Notice that `GenServer.start/2` retrurns a tuple, indicating whether or not the
 process started successfylly. After creation, the module can be used through its
 interface function; its use of `GenServer` is completely transparent.
+
+Check out the [`GenServer`](https://hexdocs.pm/elixir/GenServer.html)
+documentation for further information.
