@@ -2566,3 +2566,53 @@ The modules can be used together as follows:
     :ok
     > ServerProcess.call(pid, {:get, :name})
     "Dilbert"
+
+## Transparent Use of Server Process
+
+In the current implementation of `KeyValueStore`, the client has to deal
+explicitly with the `ServerProcess` module. This can be made transparently by
+wrapping the calls to `ServerProcess` with the _interface functions_ `start/0`,
+`put/3`, and `get/2` in `KeyValueStore`
+(`examples/server_process/v2/key_value_store.ex`):
+
+```elixir
+defmodule KeyValueStore do
+  def start do
+    ServerProcess.start(KeyValueStore)
+  end
+
+  def put(pid, key, value) do
+    ServerProcess.call(pid, {:put, key, value})
+  end
+
+  def get(pid, key) do
+    ServerProcess.call(pid, {:get, key})
+  end
+
+  def init do
+    %{}
+  end
+
+  def handle_call({:put, key, value}, state) do
+    {:ok, Map.put(state, key, value)}
+  end
+
+  def handle_call({:get, key}, state) do
+    {Map.get(state, key), state}
+  end
+end
+```
+
+Which can be used as follows:
+
+    $ cd examples/server_process/v2/
+    $ elixirc key_value_store.ex key_value_store.ex
+    $ iex
+    > pid = KeyValueStore.start()
+    > KeyValueStore.put(pid, :name, "Wally")
+    :ok
+    > KeyValueStore.get(pid, :name)
+    "Wally"
+
+Notice that the _interface functions_ run in the client process, whereas the
+_handler functions_ run in the server process.
