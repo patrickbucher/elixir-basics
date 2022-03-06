@@ -2472,3 +2472,97 @@ Which produces this output:
     %{city: "Berlin", id: 1, name: "Hans"}
     entries from Palermo after updating entry with id 3
     %{city: "Palermo", id: 3, name: "Don Corleone"}
+
+# Generic Server Process
+
+Server processes have some duties in common, such as spawnng a process, running
+the loop while carrying over state, dispatching messages etc. It therefore is
+beneficial to separate the common server concerns from the actual business
+logic.
+
+## Implementing a Generic Server Process
+
+The module `ServerProcess` (`examples/server_process/v1/server_process.ex`)
+implements a generic server process, which relies on another module to perform
+the business logic:
+
+```elixir
+defmodule ServerProcess do
+  def start(callback_module) do
+    spawn(fn ->
+      initial_state = callback_module.init()
+      loop(callback_module, initial_state)
+    end)
+  end
+
+  def call(server_pid, request) do
+    send(server_pid, {request, self()})
+
+    receive do
+      {:response, response} -> response
+    end
+  end
+
+  defp loop(callback_module, current_state) do
+    receive do
+      {request, caller} ->
+        {response, new_state} =
+          callback_module.handle_call(
+            request,
+            current_state
+          )
+
+        send(caller, {:response, response})
+        loop(callback_module, new_state)
+    end
+  end
+end
+```
+
+- The `start/1` function accepts a module reference and spawns a process. The
+  initial state is provided by the callback module's `init/0` function, which
+  must be provided. The initial state is then passed into the message loop.
+- Synchronuous messages are handled using the `call/2` function, which reqires a
+  PID and a `request`. This request is sent to the indicated process; the
+  message is enriched using the current PID. The answer is awaited synchronously
+  using `receive`, and the response message is returned to the caller.
+- The `loop/2` function keeps track of the callback module and the state. A
+  request is simply forwarded to the callback module's `handle_call/2` function,
+  which must be provided. The response returned thereby is forwarded to the
+  calling process, and the loop is run with the updated state.
+
+Any module providing `init/0` and `handle_call/2` can be using together with
+this generic server process, e.g. this simple `KeyValueStore`
+(`examples/server_process/v1/key_value_store.ex`):
+
+```elixir
+defmodule KeyValueStore do
+  def init do
+    %{}
+  end
+
+  def handle_call({:put, key, value}, state) do
+    {:ok, Map.put(state, key, value)}
+  end
+
+  def handle_call({:get, key}, state) do
+    {Map.get(state, key), state}
+  end
+end
+```
+
+- The `init/0` function just creates an empty map as the initial state.
+- The `handle_call/2` function has two clauses:
+    1. One to handle `:put` calls to add a value to the map.
+    2. One to handle `:get` calls, which returns the value for a given key.
+
+The modules can be used together as follows:
+
+    $ cd examples/server_process/v1/
+    $ elixirc key_value_store.ex key_value_store.ex
+    $ iex
+    > pid = ServerProcess.start(KeyValueStore)
+    > ServerProcess.call(pid, {:put, :name, "Dilbert"})
+    :ok
+    > ServerProcess.call(pid, {:get, :name})
+    "Dilbert"
