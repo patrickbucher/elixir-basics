@@ -42,19 +42,19 @@ defmodule ServerProcess do
   end
 end
 
-defmodule TodoList do
+defmodule Buddies do
   defstruct auto_id: 1, entries: %{}
 
   def start() do
-    ServerProcess.start(TodoList)
+    ServerProcess.start(Buddies)
   end
 
   def add_entry(pid, entry) do
     ServerProcess.cast(pid, {:add, entry})
   end
 
-  def entries(pid, date) do
-    ServerProcess.call(pid, {:get, date})
+  def entries(pid, city) do
+    ServerProcess.call(pid, {:get, city})
   end
 
   def update_entry(pid, entry_id, updater_fun) do
@@ -66,13 +66,13 @@ defmodule TodoList do
   end
 
   def init() do
-    %TodoList{}
+    %Buddies{}
   end
 
   def handle_cast({:add, entry}, state) do
     entry = Map.put(entry, :id, state.auto_id)
     new_entries = Map.put(state.entries, state.auto_id, entry)
-    %TodoList{state | entries: new_entries, auto_id: state.auto_id + 1}
+    %Buddies{state | entries: new_entries, auto_id: state.auto_id + 1}
   end
 
   def handle_cast({:upd, entry_id, updater_fun}, state) do
@@ -83,39 +83,39 @@ defmodule TodoList do
       {:ok, old_entry} ->
         new_entry = %{id: ^entry_id} = updater_fun.(old_entry)
         new_entries = Map.put(state.entries, entry_id, new_entry)
-        %TodoList{state | entries: new_entries}
+        %Buddies{state | entries: new_entries}
     end
   end
 
   def handle_cast({:del, entry_id}, state) do
     new_entries = Map.filter(state.entries, fn {_, e} -> e.id != entry_id end)
-    %TodoList{state | entries: new_entries}
+    %Buddies{state | entries: new_entries}
   end
 
-  def handle_call({:get, date}, state) do
+  def handle_call({:get, city}, state) do
     found_entries =
       state.entries
-      |> Stream.filter(fn {_, entry} -> entry.date == date end)
+      |> Stream.filter(fn {_, entry} -> entry.city == city end)
       |> Enum.map(fn {_, entry} -> entry end)
 
     {found_entries, state}
   end
 end
 
-pid = TodoList.start()
+pid = Buddies.start()
 
-IO.puts("adding some entries")
-TodoList.add_entry(pid, %{date: ~D[2022-02-26], title: "Study Elixir"})
-TodoList.add_entry(pid, %{date: ~D[2022-02-26], title: "Cleaning Up"})
-TodoList.add_entry(pid, %{date: ~D[2022-02-27], title: "Update Software"})
+IO.puts("adding some buddies")
+Buddies.add_entry(pid, %{city: "Berlin", name: "Hans"})
+Buddies.add_entry(pid, %{city: "Berlin", name: "Hermann"})
+Buddies.add_entry(pid, %{city: "Palermo", name: "Vito"})
 
-IO.puts("entries from 2022-02-26")
-Enum.each(TodoList.entries(pid, ~D[2022-02-26]), &IO.inspect/1)
+IO.puts("entries from Berlin")
+Enum.each(Buddies.entries(pid, "Berlin"), &IO.inspect/1)
 
-IO.puts("entries from 2022-02-26 after deleting entry with id 2")
-TodoList.delete_entry(pid, 2)
-Enum.each(TodoList.entries(pid, ~D[2022-02-26]), &IO.inspect/1)
+IO.puts("entries from Berlin after deleting entry with id 2")
+Buddies.delete_entry(pid, 2)
+Enum.each(Buddies.entries(pid, "Berlin"), &IO.inspect/1)
 
-IO.puts("entries from 2022-02-27 after updating entry with id 3")
-TodoList.update_entry(pid, 3, fn e -> Map.put(e, :title, "Relaxing") end)
-Enum.each(TodoList.entries(pid, ~D[2022-02-27]), &IO.inspect/1)
+IO.puts("entries from Palermo after updating entry with id 3")
+Buddies.update_entry(pid, 3, fn e -> Map.put(e, :name, "Don Corleone") end)
+Enum.each(Buddies.entries(pid, "Palermo"), &IO.inspect/1)
