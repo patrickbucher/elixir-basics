@@ -1,3 +1,9 @@
+---
+title: Elixir Basics
+subtitle: Notes for «Elixir in Action» (2nd Edition)
+author: Patrick Bucher
+---
+
 These notes are based on [Elixir in
 Action](https://www.manning.com/books/elixir-in-action-second-edition) by Saša
 Jurić.
