@@ -2475,10 +2475,10 @@ Which produces this output:
 
 # Generic Server Process
 
-Server processes have some duties in common, such as spawnng a process, running
-the loop while carrying over state, dispatching messages etc. It therefore is
-beneficial to separate the common server concerns from the actual business
-logic.
+Server processes have some duties in common, such as spawning a process, running
+the message loop while carrying over state, dispatching messages etc. It
+therefore is beneficial to separate the common server concerns from the actual
+business logic.
 
 ## Implementing a Generic Server Process
 
