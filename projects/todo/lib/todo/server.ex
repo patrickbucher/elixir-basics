@@ -22,7 +22,7 @@ defmodule Todo.Server do
   end
 
   def init(list_name) do
-    {:ok, {list_name, Todo.List.new()}}
+    {:ok, {list_name, Todo.Database.get(list_name) || Todo.List.new()}}
   end
 
   def handle_cast({:add, entry}, state) do
