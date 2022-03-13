@@ -6,7 +6,7 @@ args = System.argv()
 {:ok, pid} = PrimeServer.start(procs)
 
 1..n
-|> Stream.filter(fn i -> PrimeServer.is_prime(pid, i) end)
+|> Enum.filter(fn i -> PrimeServer.is_prime(pid, i) end)
 |> Enum.each(fn i -> IO.puts("#{i} is a prime number.") end)
 
 PrimeServer.worker_stats(pid)

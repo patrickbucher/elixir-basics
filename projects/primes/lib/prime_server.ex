@@ -23,10 +23,14 @@ defmodule PrimeServer do
     {:ok, %PrimeServer{n_workers: n_workers, workers: workers}}
   end
 
-  def handle_call({:is_prime, x}, _, state) do
-    i_worker = rem(x, state.n_workers)
-    worker = Map.get(state.workers, i_worker)
-    {:reply, PrimeWorker.is_prime(worker, x), state}
+  def handle_call({:is_prime, x}, caller, state) do
+    spawn(fn ->
+      i_worker = rem(x, state.n_workers)
+      worker = Map.get(state.workers, i_worker)
+      GenServer.reply(caller, PrimeWorker.is_prime(worker, x))
+    end)
+
+    {:noreply, state}
   end
 
   def handle_call({:worker_stats}, _, state) do

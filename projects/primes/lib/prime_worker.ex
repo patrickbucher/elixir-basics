@@ -20,7 +20,6 @@ defmodule PrimeWorker do
 
   def handle_call({:is_prime, x}, _, state) do
     result = PrimeNumbers.is_prime(x)
-
     {:reply, result, %PrimeWorker{state | handled: state.handled + 1}}
   end
 
