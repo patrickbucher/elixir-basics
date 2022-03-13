@@ -1,21 +1,15 @@
 # Primes
 
-**TODO: Add description**
+Find prime numbers using `GenServer` and multiple workers.
 
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `primes` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:primes, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/primes>.
-
+    $ mix run primes.exs 20 3
+    2 is a prime number.
+    5 is a prime number.
+    7 is a prime number.
+    11 is a prime number.
+    13 is a prime number.
+    17 is a prime number.
+    19 is a prime number.
+    Worker 0 handled 6 jobs.
+    Worker 1 handled 7 jobs.
+    Worker 2 handled 7 jobs.
