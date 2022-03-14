@@ -26,56 +26,65 @@ defmodule PrimeWorker do
       {:is_prime, x, pid} ->
         send(pid, {:prime_result, x, PrimeNumbers.is_prime(x)})
         loop()
+
+      {:terminate, pid} ->
+        send(pid, {:done})
     end
   end
 end
 
-defmodule PrimeServer do
-  def start(n, n_workers, client) do
-    workers =
-      for i <- 0..(n_workers - 1),
-          into: %{},
-          do: {i, PrimeWorker.start()}
-
-    spawn(fn ->
-      Enum.each(2..n, fn x ->
-        i_worker = rem(x, n_workers)
-        worker = Map.get(workers, i_worker)
-        send(worker, {:is_prime, x, self()})
-      end)
-
-      loop(%{}, 0, n - 1, client)
-    end)
+defmodule PrimeClient do
+  def start() do
+    spawn(fn -> loop(0) end)
   end
 
-  defp loop(results, got, needed, client) do
+  def loop(found) do
     receive do
-      {:prime_result, x, result} ->
-        results = Map.put(results, x, result)
-        got = got + 1
-
-        if got == needed do
-          send(client, {:results, results})
+      {:prime_result, _, prime} ->
+        if prime do
+          loop(found + 1)
         else
-          loop(results, got, needed, client)
+          loop(found)
         end
+
+      {:query_primes, pid} ->
+        send(pid, {:primes_found, found})
     end
+
+    loop(found)
   end
 end
 
 args = System.argv()
-[n, procs | _] = args
+[n, n_workers | _] = args
 {n, ""} = Integer.parse(n, 10)
-{procs, ""} = Integer.parse(procs, 10)
+{n_workers, ""} = Integer.parse(n_workers, 10)
 
-PrimeServer.start(n, procs, self())
+client = PrimeClient.start()
+
+workers =
+  for i <- 0..(n_workers - 1),
+      into: %{},
+      do: {i, PrimeWorker.start()}
+
+Enum.each(2..n, fn x ->
+  i_worker = rem(x, n_workers)
+  worker = Map.get(workers, i_worker)
+  send(worker, {:is_prime, x, client})
+end)
+
+workers
+|> Enum.each(fn {_, w} ->
+  send(w, {:terminate, self()})
+
+  receive do
+    {:done} -> {:nothing}
+  end
+end)
+
+send(client, {:query_primes, self()})
 
 receive do
-  {:results, results} ->
-    n_primes =
-      results
-      |> Stream.filter(fn {_, prime} -> prime end)
-      |> Enum.count()
-
-    IO.puts("Found #{n_primes} prime numbers from 2 to #{n}.")
+  {:primes_found, found} ->
+    IO.puts("Found #{found} primes from 2 to #{n}.")
 end
