@@ -38,6 +38,6 @@ end
 
 {:ok, pid} = PrimeServer.start()
 
-1..100
+1..20
 |> Stream.filter(fn i -> PrimeServer.is_prime(pid, i) end)
 |> Enum.each(fn i -> IO.puts("#{i} is a prime number.") end)

@@ -2800,7 +2800,8 @@ documentation for further information.
 
 ## Worker Pools
 
-TODO: single process (`examples/prime_genserver.exs`):
+The `PrimeServer` module uses `GenServer` to find prime numbers using the
+`PrimeNumbers` module (`examples/prime_genserver.exs`):
 
 ```elixir
 defmodule PrimeNumbers do
@@ -2843,13 +2844,161 @@ end
 
 {:ok, pid} = PrimeServer.start()
 
-1..100
+1..20
 |> Stream.filter(fn i -> PrimeServer.is_prime(pid, i) end)
 |> Enum.each(fn i -> IO.puts("#{i} is a prime number.") end)
 ```
 
-TODO: worker pool (`examples/prime_genserver_workers.exs`):
+Notice that the work is not parallelized, because all the calls are handled
+synchronously.
+
+    $ elixir examples/prime_genserver.exs
+    2 is a prime number.
+    5 is a prime number.
+    7 is a prime number.
+    11 is a prime number.
+    13 is a prime number.
+    17 is a prime number.
+    19 is a prime number.
+
+In order to find prime numbers with multiple processes performing work in
+parallel, so-called _worker processes_ are needed. In this more involved example
+(`examples/prime_workers.exs`), concurrency primitives are used to get more
+fine-grained control over the distribution of the work:
 
 ```elixir
-# TODO
+defmodule PrimeNumbers do
+  def is_prime(x) when is_number(x) and x == 2, do: true
+
+  def is_prime(x) when is_number(x) and x > 2 do
+    from = 2
+    to = trunc(:math.sqrt(x))
+    n_total = to - from + 1
+
+    n_tried =
+      Enum.take_while(from..to, fn i -> rem(x, i) != 0 end)
+      |> Enum.count()
+
+    n_total == n_tried
+  end
+
+  def is_prime(x) when is_number(x), do: false
+end
+
+defmodule PrimeWorker do
+  def start() do
+    spawn(fn -> loop() end)
+  end
+
+  defp loop() do
+    receive do
+      {:is_prime, x, pid} ->
+        send(pid, {:prime_result, x, PrimeNumbers.is_prime(x)})
+        loop()
+
+      {:terminate, pid} ->
+        send(pid, {:done})
+    end
+  end
+end
+
+defmodule PrimeClient do
+  def start() do
+    spawn(fn -> loop(0) end)
+  end
+
+  def loop(found) do
+    receive do
+      {:prime_result, _, prime} ->
+        if prime do
+          loop(found + 1)
+        else
+          loop(found)
+        end
+
+      {:query_primes, pid} ->
+        send(pid, {:primes_found, found})
+    end
+
+    loop(found)
+  end
+end
+
+args = System.argv()
+[n, n_workers | _] = args
+{n, ""} = Integer.parse(n, 10)
+{n_workers, ""} = Integer.parse(n_workers, 10)
+
+client = PrimeClient.start()
+
+workers =
+  for i <- 0..(n_workers - 1),
+      into: %{},
+      do: {i, PrimeWorker.start()}
+
+Enum.each(2..n, fn x ->
+  i_worker = rem(x, n_workers)
+  worker = Map.get(workers, i_worker)
+  send(worker, {:is_prime, x, client})
+end)
+
+workers
+|> Enum.each(fn {_, w} ->
+  send(w, {:terminate, self()})
+
+  receive do
+    {:done} -> {:nothing}
+  end
+end)
+
+send(client, {:query_primes, self()})
+
+receive do
+  {:primes_found, found} ->
+    IO.puts("Found #{found} primes from 2 to #{n}.")
+end
 ```
+
+The workers are picked fairly for every number to be processed based on a modulo
+calculator (`rem/2`). The program can be started with command-line arguments
+(the upper limit of the range to find prime numbers in, and the number of worker
+processes to be used):
+
+    $ elixir examples/prime_workers.exs 1000000 1
+    Found 78497 prime numbers from 2 to 1000000.
+
+The program speeds up considerably if _more_ workers are used. On a computer
+with eight cores, using 7 workers seems to sound reasonable (leaving 1 core for
+scheduling and other tasks):
+
+    $ time elixir examples/prime_workers.exs 1000000 7
+    Found 78497 prime numbers from 2 to 1000000.
+
+    real    0m16.531s
+    user    1m32.998s
+    sys     0m9.431s
+
+However, the CPU usage never completely maxes out, so using more workers might
+be a good idea:
+
+    $ time elixir examples/prime_workers.exs 1000000 100
+    Found 78497 prime numbers from 2 to 1000000.
+
+    real    0m10.679s
+    user    1m21.081s
+    sys     0m0.477s
+
+100 might sound like a lot, but since BEAM processes are lightweight, even more
+of them can be spawned:
+
+    $ time elixir examples/prime_workers.exs 1000000 1000
+    Found 78497 prime numbers from 2 to 1000000.
+
+    real    0m1.746s
+    user    0m10.579s
+    sys     0m0.300s
+
+Using 1000 instead of 100 workers leads to a considerable speedup. One possible
+interpretation is that the task to be performed by a process (figuring out
+whether or not a particular number is a prime number) is relatively small, so
+it's a good idea to have many such tasks queued up for the scheduler.

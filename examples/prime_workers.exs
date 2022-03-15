@@ -86,5 +86,5 @@ send(client, {:query_primes, self()})
 
 receive do
   {:primes_found, found} ->
-    IO.puts("Found #{found} primes from 2 to #{n}.")
+    IO.puts("Found #{found} prime numbers from 2 to #{n}.")
 end
