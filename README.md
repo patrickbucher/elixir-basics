@@ -3002,3 +3002,59 @@ Using 1000 instead of 100 workers leads to a considerable speedup. One possible
 interpretation is that the task to be performed by a process (figuring out
 whether or not a particular number is a prime number) is relatively small, so
 it's a good idea to have many such tasks queued up for the scheduler.
+
+# Error Handling
+
+TODO:
+
+Three types of runtime errors:
+
+1. errors
+    - dividing a number by zero
+    - calling a non-existing function
+    - no matching pattern
+    - `raise("something went wrong")`
+    - functions throwing errors end their name with `!` (e.g. `File.open!`)
+2. exits
+    - a process is exited
+    - `exit("process exits")`
+3. throws
+    - for non-local returns (resembles `break`, `goto` in procedural languages)
+    - `throw(:thrown_value)`
+
+## `try/catch`
+
+`examples/error_handling.ex`:
+
+```elixir
+defmodule ErrorHandling do
+  def execute(f) do
+    try do
+      f.()
+      IO.puts("ok")
+    catch
+      type, value ->
+        IO.puts("Error: #{inspect(type)} #{inspect(value)}")
+    end
+  end
+end
+```
+
+    $ iex examples/error_handling.ex
+    > ErrorHandling.execute(fn -> 3 / 5 end)
+    ok
+
+    > ErrorHandling.execute(fn -> 3 / 0 end)
+    Error: :error :badarith
+
+    > ErrorHandling.execute(fn -> raise("whatever") end)
+    Error: :error %RuntimeError{message: "whatever"}
+
+    > ErrorHandling.execute(fn -> :erlang.error("raw error") end)
+    Error: :error "raw error"
+
+    > ErrorHandling.execute(fn -> exit("ciao") end)
+    Error: :exit "ciao"
+
+    > ErrorHandling.execute(fn -> throw(:goodbye) end)
+    Error: :throw :goodbye
