@@ -3041,6 +3041,7 @@ end
 ```
 
     $ iex examples/error_handling.ex
+
     > ErrorHandling.execute(fn -> 3 / 5 end)
     ok
 
@@ -3058,3 +3059,61 @@ end
 
     > ErrorHandling.execute(fn -> throw(:goodbye) end)
     Error: :throw :goodbye
+
+The `try`/`catch` construct is an expression and returns the value from the last
+executed statement; either from the `try` or `catch` block
+(`examples/error_expression.ex`):
+
+```elixir
+defmodule ErrorHandling do
+  def execute(f) do
+    try do
+      f.()
+    catch
+      type, value -> %{type: type, value: value}
+    end
+  end
+end
+```
+
+    $ iex examples/error_expression.ex
+
+    > add_numbers = fn -> 3 + 5 end
+    > ErrorHandling.execute(add_numbers)
+    8
+
+    > divide_by_zero = fn -> 3 / 0 end     
+    > ErrorHandling.execute(divide_by_zero)
+    %{type: :error, value: :badarith}
+
+    > ErrorHandling.execute(&rem/2)
+    %{type: :error, value: {:badarity, {&:erlang.rem/2, []}}}
+
+Errors can be matched and dealt with at different layers
+(`examples/error_layers.ex`):
+
+```elixir
+defmodule ErrorLayers do
+  def execute(f) do
+    try do
+      try do
+        f.()
+      catch
+        :error, err -> {:failed, :with_error}
+      end
+    catch
+      :throw, err -> {:failed, :with_throw}
+    end
+  end
+end
+```
+
+    $ iex examples/error_layers.ex
+
+    > throw_f = fn -> throw(:fail_with_throw) end
+    > ErrorLayers.execute(throw_f)
+    {:failed, :with_throw}
+
+    > error_f = fn -> 3 / 0 end
+    > ErrorLayers.execute(error_f)
+    {:failed, :with_error}
