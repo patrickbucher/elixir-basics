@@ -3005,9 +3005,7 @@ it's a good idea to have many such tasks queued up for the scheduler.
 
 # Error Handling
 
-TODO:
-
-Three types of runtime errors:
+There are three types of runtime errors:
 
 1. errors
     - dividing a number by zero
@@ -3023,6 +3021,8 @@ Three types of runtime errors:
     - `throw(:thrown_value)`
 
 ## `try/catch`
+
+Any of those errors can be caught using the `try`/`catch` special form:
 
 `examples/error_handling.ex`:
 
@@ -3060,8 +3060,10 @@ end
     > ErrorHandling.execute(fn -> throw(:goodbye) end)
     Error: :throw :goodbye
 
-The `try`/`catch` construct is an expression and returns the value from the last
-executed statement; either from the `try` or `catch` block
+## `try`/`catch` Expression
+
+The `try`/`catch` special form is an expression and returns the value from the
+last executed statement; either from the `try` or `catch` block
 (`examples/error_expression.ex`):
 
 ```elixir
@@ -3088,6 +3090,8 @@ end
 
     > ErrorHandling.execute(&rem/2)
     %{type: :error, value: {:badarity, {&:erlang.rem/2, []}}}
+
+## Error Matching
 
 Errors can be matched and dealt with at different layers
 (`examples/error_layers.ex`):
@@ -3117,3 +3121,42 @@ end
     > error_f = fn -> 3 / 0 end
     > ErrorLayers.execute(error_f)
     {:failed, :with_error}
+
+## Cleanup Code
+
+Code in the `after` block is always executed, regardless of whether an error
+occured (`examples/error_after.ex`):
+
+```elixir
+defmodule ErrorAfter do
+  def execute(f) do
+    try do
+      f.()
+    catch
+      type, value -> IO.puts("error: #{type} (#{value})")
+    after
+      IO.puts("done, cleaning up…")
+    end
+  end
+end
+```
+
+    $ iex examples/error_after.ex
+
+    > failing_func = fn -> 3 / 0 end
+    > ErrorAfter.execute(failing_func)
+    error: error (badarith)
+    done, cleaning up…
+
+    > working_func = fn -> IO.puts("working") end
+    > ErrorAfter.execute(working_func)
+    working
+    done, cleaning up…
+
+Notice that `after` does _not_ affect the return value of the `try`/`catch`
+special form!
+
+## Defining Exceptions
+
+The [`defexception`](https://hexdocs.pm/elixir/Kernel.html#defexception/1) macro
+can be used to define new exceptions.
