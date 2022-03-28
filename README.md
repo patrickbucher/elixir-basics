@@ -3160,3 +3160,85 @@ special form!
 
 The [`defexception`](https://hexdocs.pm/elixir/Kernel.html#defexception/1) macro
 can be used to define new exceptions.
+
+## Errors in Concurrent Systems
+
+Processes are isolated and don't share memory. If one process crashes, the other
+processes are not affected (`examples/proc_crash.exs`):
+
+```elixir
+spawn(fn ->
+  spawn(fn ->
+    Process.sleep(1000)
+    IO.puts("Process 2: finishing...")
+  end)
+
+  raise("Process 1: failing...")
+end)
+```
+
+If the program is run, Process 1 will fail due to an exception. Process 2, which
+was spawned from Process 1, won't be affected and finishes successfully:
+
+    $ iex examples/proc_crash.exs
+    09:55:48.783 [error] Process #PID<0.109.0> raised an exception
+    ** (RuntimeError) Process 1: failing...
+        proc_crash.exs:7: anonymous fn/0 in :elixir_compiler_0.__FILE__/1
+    Process 2: finishing...
+
+Processes can be bi-directionally linked together. If one process fails, the
+linked process will also fail (`examples/proc_link.exs`):
+
+```elixir
+spawn(fn ->
+  spawn_link(fn ->
+    Process.sleep(1000)
+    IO.puts("Process 2: finishing...")
+  end)
+
+  raise("Process 1: failing...")
+end)
+```
+
+Notice that `spawn_link/1` links the spawned process to the spawning process:
+
+    $ iex examples/proc_link.exs
+    09:57:07.740 [error] Process #PID<0.109.0> raised an exception
+    ** (RuntimeError) Process 1: failing...
+        proc_link.exs:7: anonymous fn/0 in :elixir_compiler_0.__FILE__/1
+
+A crashing process emits an exit signal to all its linked processes.
+
+### Trapping Exits
+
+A linked process can react to an exit signal by setting up a _trap_ using
+`Process.flag/2`. If a linked process fails, an according message can be
+received (`examples/proc_trap.exs`):
+
+```elixir
+spawn(fn ->
+  Process.flag(:trap_exit, true)
+
+  spawn_link(fn ->
+    raise("Something went wrong")
+  end)
+
+  receive do
+    msg -> IO.inspect(msg)
+  end
+end)
+```
+
+An message of the form `{:EXIT, [from_pid], [exit_reason]}` is received and
+printed:
+
+    $ iex examples/proc_trap.exs
+    10:03:14.897 [error] Process #PID<0.110.0> raised an exception
+    ** (RuntimeError) Something went wrong
+        proc_trap.exs:5: anonymous fn/0 in :elixir_compiler_0.__FILE__/1
+    {:EXIT, #PID<0.110.0>,
+     {%RuntimeError{message: "Something went wrong"},
+      [
+        {:elixir_compiler_0, :"-__FILE__/1-fun-0-", 0,
+         [file: 'proc_trap.exs', line: 5, error_info: %{module: Exception}]}
+      ]}}
