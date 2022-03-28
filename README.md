@@ -3186,7 +3186,7 @@ was spawned from Process 1, won't be affected and finishes successfully:
         proc_crash.exs:7: anonymous fn/0 in :elixir_compiler_0.__FILE__/1
     Process 2: finishing...
 
-Processes can be bi-directionally linked together. If one process fails, the
+Processes can be bidirectionally linked together. If one process fails, the
 linked process will also fail (`examples/proc_link.exs`):
 
 ```elixir
@@ -3242,3 +3242,56 @@ printed:
         {:elixir_compiler_0, :"-__FILE__/1-fun-0-", 0,
          [file: 'proc_trap.exs', line: 5, error_info: %{module: Exception}]}
       ]}}
+
+### Monitors
+
+Links are bidirectional. If the errors should only be propagated in one way, a
+_monitor_ can be used instead (`examples/proc_monitor.exs`):
+
+```elixir
+proc_finishing =
+  spawn(fn ->
+    Process.sleep(1000)
+    IO.puts("process 1 finishing")
+  end)
+
+proc_failing =
+  spawn(fn ->
+    raise("process 2 failing")
+  end)
+
+Process.monitor(proc_finishing)
+Process.monitor(proc_failing)
+
+receive do
+  msg -> IO.inspect(msg)
+end
+
+receive do
+  msg -> IO.inspect(msg)
+end
+```
+
+`Process.monitor/1` establishes an unidirectional link which allows the spawning
+process to monitor the other processes. The monitoring process receives a
+message if a monitored process finishes or fails:
+
+    $ elixir examples/proc_monitor.exs
+    10:30:31.372 [error] Process #PID<0.99.0> raised an exception
+    ** (RuntimeError) process 2 failing
+        proc_monitor.exs:9: anonymous fn/0 in :elixir_compiler_0.__FILE__/1
+    {:DOWN, #Reference<0.2077770098.3528720387.219719>, :process, #PID<0.99.0>,
+     {%RuntimeError{message: "process 2 failing"},
+      [
+        {:elixir_compiler_0, :"-__FILE__/1-fun-1-", 0,
+         [file: 'proc_monitor.exs', line: 9, error_info: %{module: Exception}]}
+      ]}}
+    process 1 finishing
+    {:DOWN, #Reference<0.2077770098.3528720387.219718>, :process, #PID<0.98.0>,
+     :normal}
+
+Notice that process 1 finishes with `:normal`, while process 2 throws a
+`RuntimeError`.
+
+Notice that the monitoring process does not crash itself when a monitored
+process crashes.
