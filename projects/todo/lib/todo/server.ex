@@ -2,6 +2,7 @@ defmodule Todo.Server do
   use GenServer
 
   def start(list_name) do
+    IO.puts("Starting to-do server for #{list_name}")
     GenServer.start(Todo.Server, list_name)
   end
 
