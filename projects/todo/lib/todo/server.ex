@@ -3,7 +3,7 @@ defmodule Todo.Server do
 
   def start(list_name) do
     IO.puts("Starting to-do server for #{list_name}")
-    GenServer.start(Todo.Server, list_name)
+    GenServer.start_link(Todo.Server, list_name)
   end
 
   def add_entry(pid, entry) do

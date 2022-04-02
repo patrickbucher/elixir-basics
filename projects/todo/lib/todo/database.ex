@@ -6,8 +6,8 @@ defmodule Todo.Database do
   @n_workers 3
 
   def start() do
-    IO.puts("Starting database.")
-    GenServer.start(__MODULE__, nil, name: __MODULE__)
+    IO.puts("Starting database server.")
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   def store(key, data) do
