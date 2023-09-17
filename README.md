@@ -282,11 +282,10 @@ achieved and the maximum points achievable (`examples/swiss_grading.ex`):
 ```elixir
 defmodule SwissGrading do
   def grade(points, max) do
-    points
-    |> ratio(max)
-    |> multiply(5)
-    |> add(1)
-    |> round(0.1)
+    point_ratio = ratio(points, max)
+    temp_grade = multiply(point_ratio, 5)
+    exact_grade = add(temp_grade, 1)
+    round(exact_grade, 0.1)
   end
 
   defp ratio(x, y) do
@@ -309,11 +308,23 @@ end
 
 Functions defined using `defp` are private to the module, i.e. not exported.
 
-Two mechanisms for function composition are used in the `grade()` function:
+The `grade/2` function uses temporary variables to hand over return values to
+other functions. The function calls could be nested instead
+(`examples/swiss_grading_nested.ex`, omitting the private functions):
 
-1. The return value of a function is carried over in a variable (`points_ratio`,
-   `exact_grade`).
-2. The function calls are nested (`add(multiply(points_ratio, 5), 1)`).
+```elixir
+defmodule SwissGradingNested do
+  def grade(points, max) do
+    add(multiply(ratio(points, max), 5), 1)
+  end
+
+  # omitted private functions
+
+end
+```
+
+However, this is not very readable, because the function name (`add`,
+`multiply`) is optically far removed from its second argument (`5`, `1`).
 
 The pipeline operator `|>` offers a more succinct notation for this purpose:
 
@@ -326,15 +337,21 @@ end
 For each use of the pipeline, the value of the expression from the left is taken
 and used as the first argument for the function call on the right.
 
-Longer pipelines are usually spread out over multiple lines:
+Longer pipelines are usually spread out over multiple lines
+(`examples/swiss_grading_piped.ex`, omitting the private functions):
 
 ```elixir
-def grade(points, max) do
-  points
-  |> ratio(max)
-  |> multiply(5) # scaling from 0..1 to 0..5
-  |> add(1)      # shifting from 0..5 to 1..6
-  |> round(0.1)
+defmodule SwissGradingPiped do
+  def grade(points, max) do
+    points
+    |> ratio(max)
+    |> multiply(5)
+    |> add(1)
+    |> round(0.1)
+  end
+
+  # omitted private functions
+
 end
 ```
 
