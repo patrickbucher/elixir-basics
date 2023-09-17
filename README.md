@@ -1116,7 +1116,7 @@ a string is more practical:
     > domain
     "paedubucher.ch"
 
-## Compund Matches
+## Compound Matches
 
 Matches can be chained to extract values on different levels on a single line:
 
