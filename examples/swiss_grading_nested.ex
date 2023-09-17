@@ -1,9 +1,6 @@
-defmodule SwissGrading do
+defmodule SwissGradingNested do
   def grade(points, max) do
-    point_ratio = ratio(points, max)
-    temp_grade = multiply(point_ratio, 5)
-    exact_grade = add(temp_grade, 1)
-    round(exact_grade, 0.1)
+    add(multiply(ratio(points, max), 5), 1)
   end
 
   defp ratio(x, y) do
