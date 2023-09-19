@@ -827,7 +827,7 @@ A range is an enumerable, and, thus, can be processed using the functions of the
 
 ### Keyword Lists
 
-Some functions, such as `IO.inspect/2` expect optional arguments as a keyword
+Some functions such as `IO.inspect/2` expect optional arguments as a keyword
 list, which can be constructed as a list of atom/value tuples:
 
     > options = [{:width, 3}, {:limit, 2}]
@@ -939,8 +939,8 @@ and [DateTime](https://hexdocs.pm/elixir/DateTime.html).
 
 ### IO Lists
 
-IO lists are special kinds of lists to build up data for I/O incrementally,
-which only must consist of integers (0..255), binaries, and other IO lists:
+IO lists are special kinds of lists to build up data for I/O incrementally.
+They only must consist of integers (0..255), binaries, and other IO lists:
 
     > output = [[['F', 'o'], 'o'], "ba", 'r']
     > IO.puts(output)
