@@ -1467,9 +1467,9 @@ def extract(employee) do
 end
 ```
 
-The pattern on the left must be matched by the expression on the right. If
-matching, the next pattern is matched against the expression; otherwise the
-unmatching expression is returned:
+The pattern on the left must be matched by the expression on the right. If it
+matches, the next pattern is matched against the expression; otherwise the
+expression that didn't match is returned:
 
     $ elixir examples/users.exs
     %{email: "dilbo@corp.com", password: "Uyee7oox0OK8johG", username: "dilbo"}
