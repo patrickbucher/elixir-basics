@@ -1708,9 +1708,9 @@ for further details.
 
 ## Streams
 
-The `Enum` module works _eagerly_, i.e. it performs is work as its functions are
-invoked on the entire collection. Consider the function `even_fizz_buzz_enum`
-(`examples/special_numbers.ex`):
+The `Enum` module works _eagerly_, i.e. it performs its work as its functions
+are invoked on the entire collection. Consider the function
+`even_fizz_buzz_enum` (`examples/special_numbers.ex`):
 
 ```elixir
 defmodule SpecialNumbers do
