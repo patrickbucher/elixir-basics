@@ -1807,7 +1807,7 @@ parameter and return some information about the given data object:
 name_length = String.length(name)
 ```
 
-By convention, many modules provides a `new` function, which creates a data
+By convention, many modules provide a `new` function, which creates a data
 object of the type the respective module deals with.
 
 ```elixir
@@ -1880,7 +1880,7 @@ end
 ## Composing Abstractions
 
 Storing a list of values under a key can be used in more situations than for
-storing ToDo entries. The details of managing such a map thus can be abstracted
+storing buddy entries. The details of managing such a map thus can be abstracted
 away by a new module called `MultiDict` (`examples/buddies/multi_dict.ex`):
 
 ```elixir
@@ -1925,9 +1925,9 @@ The `MultiDict` module has to be compiled so that `Buddies` can make use of it:
 
 ## Structuring Data with Maps
 
-The current implementation is tedious to extend: In case an additional field
-should be stored, multiple functions needed to extended. It's therefore more
-flexible to store the data in a map (`examples/buddies/buddies_v3.exs`):
+The current implementation is tedious to extend: If an additional field should
+be stored, multiple functions needed to extended. It's therefore more flexible
+to store the data in a map (`examples/buddies/buddies_v3.exs`):
 
 ```elixir
 defmodule Buddies do
@@ -1943,8 +1943,8 @@ defmodule Buddies do
 end
 ```
 
-The `MultiDict` module works without any modification. The client code, however,
-becomes more verbose, because a map with keys needs to be provided:
+The `MultiDict` module works without any modifications. The client code,
+however, becomes more verbose, because a map with keys needs to be provided:
 
 ```elixir
 buddies =
