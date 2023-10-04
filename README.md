@@ -2251,6 +2251,8 @@ Process.sleep(1000)
   message. Since the Echo server runs asynchronously, the `Process.sleep/1` call
   makes sure that the `Echo` process has enough time to finish its work.
 
+The echo server is run as follows:
+
     $ elixir examples/echoserver.exs
     Hello
     World
