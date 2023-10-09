@@ -2330,13 +2330,13 @@ end
 - The `start/1` function is used to `spawn` the new process. The given initial
   state (`balance`) is provided by a lambda.
 - The `loop/1` function handles the incoming messages. Since `receive` is an
-  expression, the (poentially) modified `balance` stores its returned value. The
-  first clause catches `:query` results, which are sent back to the caller PID.
-  The current balance is returned unmodified. The second clause catches incoming
-  payments (`:pay_in`), which are added to the balance. The third clause
-  (`:pay_out`) first checks the current balance, and only reduces it by the
-  given `amount` if the new balane would not be lower than zero. The `loop` is
-  called again with the (potentially) updated `balance`.
+  expression, the (potentially) modified `balance` stores its returned value.
+  The first clause catches `:query` results, which are sent back to the caller
+  PID. The current balance is returned unmodified. The second clause catches
+  incoming payments (`:pay_in`), which are added to the balance. The third
+  clause (`:pay_out`) first checks the current balance, and only reduces it by
+  the given `amount` if the new balane would not be lower than zero. The `loop`
+  is called again with the (potentially) updated `balance`.
 
 In this example, multiple processes are created, which run independently of each
 other:
@@ -2348,7 +2348,7 @@ accounts = %{
   "Wally" => BankAccount.start(12_500)
 }
 
-# random spending 1..1000
+# random spending 1..1000 ten times
 1..10
 |> Enum.each(fn _ ->
   {name, account} = Enum.random(accounts)
@@ -2454,9 +2454,9 @@ end
 ```
 
 The struct defined in the `Buddies` module is passed around in between loops.
-The messages (`:add`, `:upd`, `:del`, and `:entries`) are forwarded asl calls to the
-underlying `Buddies` module (`add_entry/2`, `update_entry/3`, `delete_entry/2`,
-and `entries/2`, respectively).
+The messages (`:add`, `:upd`, `:del`, and `:entries`) are forwarded as calls to
+the underlying `Buddies` module (`add_entry/2`, `update_entry/3`,
+`delete_entry/2`, and `entries/2`, respectively).
 
 Notice that the server sends its messages to an atom `:buddy_server` instead of
 to a specific PID. This is because the server process is registered under that
