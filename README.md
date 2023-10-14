@@ -1777,6 +1777,45 @@ This implementation also supports bigger `n` arguments:
     > SpecialNumbers.even_fizz_buzz_stream(10)
     [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
 
+The module `PrimeSieve` implements the Sieve of Eratosthenes using a stream:
+
+```elixir
+defmodule PrimeSieve do
+  def stream() do
+    Stream.unfold([], fn
+      [] -> {2, [2]}
+      [h|t] -> next(h+1, [h|t])
+    end)
+  end
+
+  defp next(n, primes) do
+    if Enum.any?(primes, fn p -> rem(n, p) == 0 end) do
+      next(n+1, primes)
+    else
+      {n, [n|primes]}
+    end
+  end
+end
+```
+
+The computation works as follows:
+
+- `Stream.unfold/2` expects an accumulator and a function, which returns a tuple
+  consisting of the next value and the updated accumulator.
+- The first call with an empty list yields both the value `2`, which is the
+  first prime number, and an accumulator containing only that number.
+- Subsequent calls search for the next prime number by incrementing the latest
+  prime number, which then is checked for divisibility by zero against all the
+  prime numbers found earlier.
+
+The module can be used as follows:
+
+    $ iex examples/prime_sieve.ex
+    > Enum.take(PrimeSieve.stream(), 10)
+    [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    > Enum.take(PrimeSieve.stream(), 100) |> Enum.drop(90)
+    [467, 479, 487, 491, 499, 503, 509, 521, 523, 541]
+
 # Abstraction
 
 In object-oriented languages, methods are called on instances of classes:
