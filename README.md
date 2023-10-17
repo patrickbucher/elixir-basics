@@ -1777,10 +1777,19 @@ This implementation also supports bigger `n` arguments:
     > SpecialNumbers.even_fizz_buzz_stream(10)
     [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
 
-The module `PrimeSieve` implements the Sieve of Eratosthenes using a stream:
+The module `PrimeSieve` implements the Sieve of Eratosthenes using a stream
+(`examples/prime_sieve.ex`):
 
 ```elixir
 defmodule PrimeSieve do
+  def first(n) do
+    stream() |> Enum.take(n)
+  end
+
+  def up_to(n) do
+    stream() |> Enum.take_while(& &1 <= n)
+  end
+
   def stream() do
     Stream.unfold([], fn
       [] -> {2, [2]}
@@ -1798,7 +1807,7 @@ defmodule PrimeSieve do
 end
 ```
 
-The computation works as follows:
+The computation in `stream/0` works as follows:
 
 - `Stream.unfold/2` expects an accumulator and a function, which returns a tuple
   consisting of the next value and the updated accumulator.
@@ -1806,15 +1815,20 @@ The computation works as follows:
   first prime number, and an accumulator containing only that number.
 - Subsequent calls search for the next prime number by incrementing the latest
   prime number, which then is checked for divisibility by zero against all the
-  prime numbers found earlier.
+  prime numbers found earlier (in `next/2`, using `Enum.any/2`).
 
-The module can be used as follows:
+Both `first/1` and `up_to/1` are convenience that return the first `n` prime
+numbers, or the prime numbers up to a certain number:
 
     $ iex examples/prime_sieve.ex
     > Enum.take(PrimeSieve.stream(), 10)
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
     > Enum.take(PrimeSieve.stream(), 100) |> Enum.drop(90)
     [467, 479, 487, 491, 499, 503, 509, 521, 523, 541]
+    > PrimeSieve.first(20)
+    [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71]
+    > PrimeSieve.up_to(50)
+    [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
 
 # Abstraction
 

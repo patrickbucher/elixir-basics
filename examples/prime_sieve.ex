@@ -1,4 +1,12 @@
 defmodule PrimeSieve do
+  def first(n) do
+    stream() |> Enum.take(n)
+  end
+
+  def up_to(n) do
+    stream() |> Enum.take_while(& &1 <= n)
+  end
+
   def stream() do
     Stream.unfold([], fn
       [] -> {2, [2]}
