@@ -518,6 +518,24 @@ Two lists can be concatenated using the `++` operator:
     > [1, 2, 3] ++ [4, 5, 6] 
     [1, 2, 3, 4, 5, 6]
 
+Note that lists with values within ASCII range are inspected as character lists
+by default:
+
+    > IO.inspect([65, 66, 67])
+    ~c"ABC"
+    ~c"ABC"
+
+To prevent this, run the following command (or put it into your project's
+`.iex.exs` or your home folder's `.iex.exs`):
+
+    IEx.configure(inspect: [charlists: :as_lists])
+
+Which results in lists being printed as lists:
+
+    > IO.inspect([65, 66, 67])
+    ~c"ABC"
+    [65, 66, 67]
+
 ### Cons Cells
 
 Lists are implemented as _cons cells_ (i.e. like in LISP) and support a special
