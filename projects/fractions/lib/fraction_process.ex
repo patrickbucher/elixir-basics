@@ -16,27 +16,27 @@ defmodule FractionProcess do
     end
   end
 
-  defp run(acc) do
-    acc =
+  defp run(state) do
+    state =
       receive do
-        {:add, frac} ->
-          Fraction.add(acc, frac)
+        {:add, fraction} ->
+          Fraction.add(state, fraction)
 
-        {:subtract, frac} ->
-          Fraction.subtract(acc, frac)
+        {:subtract, fraction} ->
+          Fraction.subtract(state, fraction)
 
-        {:multiply, frac} ->
-          Fraction.multiply(acc, frac)
+        {:multiply, fraction} ->
+          Fraction.multiply(state, fraction)
 
-        {:divide, frac} ->
-          Fraction.divide(acc, frac)
+        {:divide, fraction} ->
+          Fraction.divide(state, fraction)
 
         {:compute, caller} ->
-          acc = Fraction.cancel(acc)
-          send(caller, {:result, acc})
-          acc
+          state = Fraction.cancel(state)
+          send(caller, {:result, state})
+          state
       end
 
-    run(acc)
+    run(state)
   end
 end
