@@ -1,5 +1,5 @@
 defmodule Fraction do
-  defstruct dividend: 0, divisor: 0
+  defstruct dividend: 0, divisor: 1
 
   def add(this, that) do
     %Fraction{
